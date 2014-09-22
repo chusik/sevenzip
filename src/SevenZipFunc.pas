@@ -136,9 +136,8 @@ begin
   Result:= E_SUCCESS;
 end;
 
-function ProcessFileW(hArcData : TArcHandle; Operation : Integer; DestPath, DestName : PWideChar) : Integer;stdcall;
+function ProcessFileW(hArcData: TArcHandle; Operation: Integer; DestPath, DestName: PWideChar): Integer; stdcall;
 var
-  FileSize: Int64;
   FileHandle: THandle;
   Handle: TSevenZipHandle absolute hArcData;
 begin
@@ -210,37 +209,40 @@ var
   AProgress: TSevenZipUpdate;
   AFormats: TJclUpdateArchiveClassArray;
 begin
-    AFormats := GetArchiveFormats.FindUpdateFormats(PackedFile);
-    for I := Low(AFormats) to High(AFormats) do
-    begin
-      Archive := AFormats[I].Create(PackedFile, 0, False);
-      try
-        AProgress:= TSevenZipUpdate.Create;
-        Archive.OnProgress:= AProgress.JclCompressionProgress;
+  AFormats := GetArchiveFormats.FindUpdateFormats(PackedFile);
+  for I := Low(AFormats) to High(AFormats) do
+  begin
+    Archive := AFormats[I].Create(PackedFile, 0, False);
+    try
+      AProgress:= TSevenZipUpdate.Create;
+      Archive.OnProgress:= AProgress.JclCompressionProgress;
 
-        if FileExists(PackedFile) then Archive.ListFiles;
+      if FileExists(PackedFile) then Archive.ListFiles;
 
-        if Assigned(SubPath) then FilePath:= IncludeTrailingPathDelimiter(WideString(SubPath));
-        while True do
-        begin
-          FileName := WideString(AddList);
-          if FileName[Length(FileName)] = PathDelim then
-            Archive.AddDirectory(FilePath + FileName, SrcPath + FileName)
-          else
-            Archive.AddFile(FilePath + FileName, SrcPath + FileName);
-          if (AddList + Length(FileName) + 1)^ = #0 then
-            Break;
-          Inc(AddList, Length(FileName) + 1);
-        end;
-        Archive.Compress;
-
-        Exit(E_SUCCESS);
-      finally
-        Archive.Free;
-        AProgress.Free;
+      if Assigned(SubPath) then FilePath:= IncludeTrailingPathDelimiter(WideString(SubPath));
+      while True do
+      begin
+        FileName := WideString(AddList);
+        if FileName[Length(FileName)] = PathDelim then
+          Archive.AddDirectory(FilePath + FileName, SrcPath + FileName)
+        else
+          Archive.AddFile(FilePath + FileName, SrcPath + FileName);
+        if (AddList + Length(FileName) + 1)^ = #0 then
+          Break;
+        Inc(AddList, Length(FileName) + 1);
       end;
+      try
+        Archive.Compress;
+      except
+        on E: Exception do
+          Exit(ExceptToError(E));
+      end;
+      Exit(E_SUCCESS);
+    finally
+      Archive.Free;
+      AProgress.Free;
     end;
-
+  end;
   Result:= E_NOT_SUPPORTED;
 end;
 
