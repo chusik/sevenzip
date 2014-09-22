@@ -35,17 +35,30 @@ type
     Count: LongWord;
     FileName: AnsiString;
     Directory: AnsiString;
-    Archive: TJclCompressionArchive;
+    Archive: TJclDecompressArchive;
     ProcessDataProc: TProcessDataProcW;
+  public
     procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64);
     function JclCompressionExtract(Sender: TObject; AIndex: Integer;
       var AFileName: TFileName; var Stream: TStream; var AOwnsStream: Boolean): Boolean;
   end;
 
+  { TSevenZipUpdate }
+
+  TSevenZipUpdate = class
+    procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64);
+  end;
+
 threadvar
   ProcessDataProcT: TProcessDataProcW;
 
-
+function WinToDosTime(const WinTime: TFILETIME; var DosTime: Cardinal): LongBool;
+var
+  lft : Windows.TFILETIME;
+begin
+  Result:= Windows.FileTimeToLocalFileTime(@Windows.FILETIME(WinTime), @lft) and
+           Windows.FileTimeToDosDateTime(@lft, @LongRec(Dostime).Hi, @LongRec(DosTime).Lo);
+end;
 
 function OpenArchiveW(var ArchiveData : tOpenArchiveDataW) : TArcHandle; stdcall;
 var
@@ -57,30 +70,27 @@ begin
   with Handle do
   begin
     Index:= 0;
+    try
+      AFormats := GetArchiveFormats.FindDecompressFormats(ArchiveData.ArcName);
+      for I := Low(AFormats) to High(AFormats) do
+      begin
+        Archive := AFormats[I].Create(ArchiveData.ArcName, 0, False);
+        try
+          Archive.OnProgress := JclCompressionProgress;
 
-    AFormats := GetArchiveFormats.FindDecompressFormats(ArchiveData.ArcName);
+          Archive.OnExtract:= JclCompressionExtract;
+          Archive.ListFiles;
 
-    for I := Low(AFormats) to High(AFormats) do
-    begin
-      Archive := AFormats[I].Create(ArchiveData.ArcName, 0, False);
-      try
-        Archive.OnProgress := JclCompressionProgress;
+          Count:= Archive.ItemCount;
 
-        if Archive is TJclDecompressArchive then
-        begin
-          TJclDecompressArchive(Archive).OnExtract:= JclCompressionExtract;
-          TJclDecompressArchive(Archive).ListFiles
-        end
-        else
-        if Archive is TJclUpdateArchive then
-          TJclUpdateArchive(Archive).ListFiles;
-
-        Count:= Archive.ItemCount;
-
-        Exit(TArcHandle(Handle));
-      except
-        //CloseAllArchive;
+          Exit(TArcHandle(Handle));
+        except
+          Archive.Free;
+          Free;
+        end;
       end;
+    except
+      Free;
     end;
   end;
   Result:= wcxInvalidHandle;
@@ -95,14 +105,8 @@ begin
   begin
     if Index >= Count then
     begin
-      if Archive is TJclDecompressArchive then
-        TJclDecompressArchive(Archive).ExtractSelected(Directory, True)
-      else
-      if Archive is TJclUpdateArchive then
-        TJclUpdateArchive(Archive).ExtractSelected(Directory, True);
-
-      Result:= E_END_ARCHIVE;
-      Exit;
+      Archive.ExtractSelected(Directory, True);
+      Exit(E_END_ARCHIVE);
     end;
     Item:= Archive.Items[Index];
     HeaderData.FileName:= Item.PackedName;
@@ -111,6 +115,7 @@ begin
     HeaderData.PackSize:= Int64Rec(Item.PackedSize).Lo;
     HeaderData.PackSizeHigh:= Int64Rec(Item.PackedSize).Hi;
     HeaderData.FileAttr:= Item.Attributes;
+    WinToDosTime(Item.LastWriteTime, LongWord(HeaderData.FileTime));
   end;
   Result:= E_SUCCESS;
 end;
@@ -166,24 +171,6 @@ begin
 
 end;
 
-{
-function ProgressCallback(sender: Pointer; total: boolean; value: int64): HRESULT; stdcall;
-var
-  Return: Integer;
-  Handle: TSevenZipHandle absolute sender;
-begin
-  if (Sender = nil) then
-    Return:= ProcessDataProcT(nil, Value)
-  else with Handle do
-    Return:= ProcessDataProc(PWideChar(Archive.ItemPath[Index]), Value);
-
-  if (Return <> 0) then
-    Result := S_OK
-  else
-    Result := E_FAIL;
-end;
-}
-
 procedure SetProcessDataProcW(hArcData : TArcHandle; pProcessDataProc : TProcessDataProcW); stdcall;
 var
   Handle: TSevenZipHandle absolute hArcData;
@@ -192,7 +179,6 @@ begin
     ProcessDataProcT:= pProcessDataProc
   else begin
     Handle.ProcessDataProc:= pProcessDataProc;
-//    Handle.Archive.SetProgressCallback(Handle, @ProgressCallback);
   end;
 end;
 
@@ -203,6 +189,7 @@ var
   FilePath: WideString;
   FileName: WideString;
   Archive: TJclUpdateArchive;
+  AProgress: TSevenZipUpdate;
   AFormats: TJclUpdateArchiveClassArray;
 begin
     AFormats := GetArchiveFormats.FindUpdateFormats(PackedFile);
@@ -210,6 +197,9 @@ begin
     begin
       Archive := AFormats[I].Create(PackedFile, 0, False);
       try
+        AProgress:= TSevenZipUpdate.Create;
+        Archive.OnProgress:= AProgress.JclCompressionProgress;
+
         if FileExists(PackedFile) then Archive.ListFiles;
 
         if Assigned(SubPath) then FilePath:= IncludeTrailingPathDelimiter(WideString(SubPath));
@@ -229,6 +219,7 @@ begin
         Exit(E_SUCCESS);
       finally
         Archive.Free;
+        AProgress.Free;
       end;
     end;
 
@@ -302,17 +293,38 @@ begin
   Result:= Length(AFormats) > 0;
 end;
 
+{ TSevenZipUpdate }
+
+procedure TSevenZipUpdate.JclCompressionProgress(Sender: TObject; const Value,
+  MaxValue: Int64);
+var
+  Percent: Int64;
+  Archive: TJclUpdateArchive absolute Sender;
+begin
+  if Assigned(ProcessDataProcT) then
+  begin
+    Percent:= 1000 + (Value * 100) div MaxValue;
+    ProcessDataProcT(PWideChar(Archive.Items[Archive.CurrentItemIndex].PackedName), -Percent);
+  end;
+end;
+
 { TSevenZipHandle }
 
 procedure TSevenZipHandle.JclCompressionProgress(Sender: TObject; const Value,
   MaxValue: Int64);
+var
+  Percent: Int64;
+  Archive: TJclDecompressArchive absolute Sender;
 begin
-
+  if Assigned(ProcessDataProc) then
+  begin
+    Percent:= 1000 + (Value * 100) div MaxValue;
+    ProcessDataProc(PWideChar(Archive.Items[Archive.CurrentItemIndex].PackedName), -Percent);
+  end;
 end;
 
 function TSevenZipHandle.JclCompressionExtract(Sender: TObject; AIndex: Integer;
-  var AFileName: TFileName; var Stream: TStream; var AOwnsStream: Boolean
-  ): Boolean;
+  var AFileName: TFileName; var Stream: TStream; var AOwnsStream: Boolean): Boolean;
 begin
   Result:= True;
   AFileName:= Directory + FileName;
