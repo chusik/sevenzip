@@ -35,6 +35,11 @@
         <HostApplicationFilename Value="D:\doublecmd\doublecmd.exe"/>
       </local>
     </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="doublecmd_common"/>
+      </Item1>
+    </RequiredPackages>
     <Units Count="24">
       <Unit0>
         <Filename Value="wcx_sevenzip.dpr"/>
@@ -44,7 +49,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="85" Y="44"/>
-        <UsageCount Value="33"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit0>
@@ -55,9 +60,9 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="236"/>
-        <CursorPos X="46" Y="107"/>
-        <UsageCount Value="33"/>
+        <TopLine Value="205"/>
+        <CursorPos X="43" Y="218"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
@@ -76,7 +81,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="5"/>
         <CursorPos X="1" Y="1"/>
-        <UsageCount Value="16"/>
+        <UsageCount Value="17"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
@@ -175,9 +180,9 @@
         <UnitName Value="JclCompression"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="119" Y="12"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="4747"/>
+        <CursorPos X="3" Y="4751"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit16>
@@ -193,12 +198,10 @@
       <Unit18>
         <Filename Value="jcl\common\JclFileUtils.pas"/>
         <UnitName Value="JclFileUtils"/>
-        <EditorIndex Value="8"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="41"/>
-        <CursorPos X="18" Y="60"/>
+        <TopLine Value="2405"/>
+        <CursorPos X="23" Y="2427"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit18>
       <Unit19>
@@ -206,9 +209,9 @@
         <UnitName Value="JclWideStrings"/>
         <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="359"/>
-        <CursorPos X="8" Y="375"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="287"/>
+        <CursorPos X="10" Y="300"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit19>
@@ -219,18 +222,16 @@
         <WindowIndex Value="0"/>
         <TopLine Value="579"/>
         <CursorPos X="5" Y="607"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit20>
       <Unit21>
         <Filename Value="D:\Development\FPC\2.6.2\source\rtl\objpas\classes\classesh.inc"/>
-        <EditorIndex Value="7"/>
         <WindowIndex Value="0"/>
         <TopLine Value="913"/>
         <CursorPos X="3" Y="933"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit21>
       <Unit22>
         <Filename Value="jcl\common\JclBase.pas"/>
@@ -248,131 +249,131 @@
         <WindowIndex Value="0"/>
         <TopLine Value="31"/>
         <CursorPos X="1" Y="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit23>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="30" HistoryIndex="28">
       <Position1>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="574" Column="55" TopLine="541"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="222" Column="1" TopLine="204"/>
       </Position1>
       <Position2>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="576" Column="55" TopLine="543"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="223" Column="1" TopLine="204"/>
       </Position2>
       <Position3>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="578" Column="55" TopLine="545"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="225" Column="1" TopLine="204"/>
       </Position3>
       <Position4>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="580" Column="55" TopLine="547"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="218" Column="1" TopLine="204"/>
       </Position4>
       <Position5>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="583" Column="55" TopLine="550"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="220" Column="73" TopLine="204"/>
       </Position5>
       <Position6>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="585" Column="55" TopLine="552"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="207" Column="1" TopLine="202"/>
       </Position6>
       <Position7>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="587" Column="55" TopLine="554"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="208" Column="1" TopLine="202"/>
       </Position7>
       <Position8>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="589" Column="55" TopLine="556"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="209" Column="1" TopLine="202"/>
       </Position8>
       <Position9>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3474" Column="55" TopLine="3441"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="211" Column="1" TopLine="202"/>
       </Position9>
       <Position10>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3513" Column="55" TopLine="3480"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="212" Column="1" TopLine="202"/>
       </Position10>
       <Position11>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3550" Column="55" TopLine="3517"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="213" Column="1" TopLine="202"/>
       </Position11>
       <Position12>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3590" Column="55" TopLine="3557"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="215" Column="1" TopLine="202"/>
       </Position12>
       <Position13>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3629" Column="55" TopLine="3596"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="218" Column="1" TopLine="202"/>
       </Position13>
       <Position14>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3642" Column="55" TopLine="3609"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="219" Column="1" TopLine="202"/>
       </Position14>
       <Position15>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3657" Column="55" TopLine="3624"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="220" Column="1" TopLine="202"/>
       </Position15>
       <Position16>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3693" Column="55" TopLine="3660"/>
+        <Caret Line="5089" Column="1" TopLine="5075"/>
       </Position16>
       <Position17>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3727" Column="55" TopLine="3694"/>
+        <Caret Line="5090" Column="1" TopLine="5075"/>
       </Position17>
       <Position18>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="3740" Column="55" TopLine="3707"/>
+        <Caret Line="5092" Column="1" TopLine="5075"/>
       </Position18>
       <Position19>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="5094" Column="1" TopLine="5075"/>
       </Position19>
       <Position20>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="567" Column="23" TopLine="537"/>
+        <Caret Line="5095" Column="1" TopLine="5075"/>
       </Position20>
       <Position21>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="5096" Column="1" TopLine="5075"/>
       </Position21>
       <Position22>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="567" Column="23" TopLine="534"/>
+        <Caret Line="5098" Column="1" TopLine="5076"/>
       </Position22>
       <Position23>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="2215" Column="22" TopLine="2211"/>
+        <Caret Line="5106" Column="1" TopLine="5094"/>
       </Position23>
       <Position24>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="2216" Column="39" TopLine="2211"/>
+        <Caret Line="5107" Column="1" TopLine="5094"/>
       </Position24>
       <Position25>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="5108" Column="1" TopLine="5094"/>
       </Position25>
       <Position26>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="243" Column="54" TopLine="210"/>
+        <Caret Line="5109" Column="1" TopLine="5094"/>
       </Position26>
       <Position27>
-        <Filename Value="jcl\common\JclFileUtils.pas"/>
-        <Caret Line="349" Column="67" TopLine="339"/>
+        <Filename Value="jcl\common\JclCompression.pas"/>
+        <Caret Line="5115" Column="1" TopLine="5094"/>
       </Position27>
       <Position28>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="214" Column="33" TopLine="210"/>
+        <Caret Line="5117" Column="1" TopLine="5096"/>
       </Position28>
       <Position29>
-        <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="SevenZipFunc.pas"/>
+        <Caret Line="211" Column="33" TopLine="202"/>
       </Position29>
       <Position30>
         <Filename Value="jcl\common\JclCompression.pas"/>
-        <Caret Line="2215" Column="16" TopLine="2182"/>
+        <Caret Line="4751" Column="3" TopLine="4747"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
@@ -380,7 +381,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="wcx_sevenzip.wcx" ApplyConventions="False"/>
+      <Filename Value="..\sevenzip.wcx" ApplyConventions="False"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir);jcl\include;jcl\include\jedi"/>
@@ -406,7 +407,7 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <BreakPoints Count="12">
+    <BreakPoints Count="11">
       <Item1>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
@@ -440,7 +441,7 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="SevenZipFunc.pas"/>
-        <Line Value="246"/>
+        <Line Value="239"/>
       </Item5>
       <Item6>
         <Kind Value="bpkSource"/>
@@ -468,29 +469,22 @@
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="SevenZipFunc.pas"/>
-        <Line Value="325"/>
+        <Line Value="318"/>
       </Item9>
       <Item10>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="SevenZipFunc.pas"/>
-        <Line Value="213"/>
+        <Line Value="253"/>
       </Item10>
       <Item11>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
-        <Source Value="SevenZipFunc.pas"/>
-        <Line Value="260"/>
-      </Item11>
-      <Item12>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
         <Source Value="jcl\common\JclCompression.pas"/>
         <Line Value="9070"/>
-      </Item12>
+      </Item11>
     </BreakPoints>
     <Exceptions Count="3">
       <Item1>

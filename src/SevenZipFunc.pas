@@ -200,42 +200,35 @@ function PackFilesW(PackedFile: PWideChar; SubPath: PWideChar;
   SrcPath: PWideChar; AddList: PWideChar; Flags: Integer): Integer; stdcall;
 var
   I: Integer;
-  Archive: TJclCompressionArchive;
-  AFormats: TJclCompressArchiveClassArray;
-var
-
   FilePath: WideString;
   FileName: WideString;
-  sPassword: AnsiString;
-
+  Archive: TJclUpdateArchive;
+  AFormats: TJclUpdateArchiveClassArray;
 begin
-
-    AFormats := GetArchiveFormats.FindCompressFormats(PackedFile);
-
+    AFormats := GetArchiveFormats.FindUpdateFormats(PackedFile);
     for I := Low(AFormats) to High(AFormats) do
     begin
       Archive := AFormats[I].Create(PackedFile, 0, False);
       try
-        if not (Archive is TJclCompressArchive) then Continue;
+        if FileExists(PackedFile) then Archive.ListFiles;
 
-//        Archive.OnProgress := JclCompressionProgress;
-
-
-        FilePath:= WideString(SubPath);
+        if Assigned(SubPath) then FilePath:= IncludeTrailingPathDelimiter(WideString(SubPath));
         while True do
         begin
           FileName := WideString(AddList);
-          (Archive as TJclCompressArchive).AddFile(FileName, SrcPath + FilePath + FileName);
+          if FileName[Length(FileName)] = PathDelim then
+            Archive.AddDirectory(FilePath + FileName, SrcPath + FileName)
+          else
+            Archive.AddFile(FilePath + FileName, SrcPath + FileName);
           if (AddList + Length(FileName) + 1)^ = #0 then
             Break;
           Inc(AddList, Length(FileName) + 1);
         end;
-        (Archive as TJclCompressArchive).Compress;
-        Archive.Free;
+        Archive.Compress;
 
         Exit(E_SUCCESS);
-      except
-        //CloseAllArchive;
+      finally
+        Archive.Free;
       end;
     end;
 
