@@ -24,7 +24,7 @@ function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
 implementation
 
 uses
-  Windows, SysUtils, Classes, JclCompression;
+  Windows, SysUtils, Classes, JclCompression, sevenzip;
 
 type
 
@@ -49,8 +49,28 @@ type
     procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64);
   end;
 
+  { TJclSevenzipDecompressArchiveHelper }
+
+  TJclSevenzipDecompressArchiveHelper = class helper for TJclSevenzipDecompressArchive
+    procedure ExtractItem(Index: Cardinal; const ADestinationDir: String);
+  end;
+
 threadvar
   ProcessDataProcT: TProcessDataProcW;
+
+function ExceptToError(const E: Exception): Integer;
+begin
+  if E is EFOpenError then
+    Result:= E_EOPEN
+  else if E is EFCreateError then
+    Result:= E_ECREATE
+  else if E is EReadError then
+    Result:= E_EREAD
+  else if E is EWriteError then
+    Result:= E_EWRITE
+  else
+    Result:= E_BAD_DATA;
+end;
 
 function WinToDosTime(const WinTime: TFILETIME; var DosTime: Cardinal): LongBool;
 var
@@ -103,11 +123,7 @@ var
 begin
   with Handle do
   begin
-    if Index >= Count then
-    begin
-      Archive.ExtractSelected(Directory, True);
-      Exit(E_END_ARCHIVE);
-    end;
+    if Index >= Count then Exit(E_END_ARCHIVE);
     Item:= Archive.Items[Index];
     HeaderData.FileName:= Item.PackedName;
     HeaderData.UnpSize:= Int64Rec(Item.FileSize).Lo;
@@ -140,11 +156,13 @@ begin
             Directory:= ExtractFilePath(DestName);
             FileName:= ExtractFileName(DestName);
           end;
-          Archive.Items[Index].Selected := True;
-
-           // Result:= E_EWRITE
-//          else
+          try
             Result:= E_SUCCESS;
+            TJclSevenzipDecompressArchive(Archive).ExtractItem(Index, Directory);
+          except
+            on E: Exception do
+              Result:= ExceptToError(E);
+          end;
         end;
       else
         Result:= E_SUCCESS;
@@ -291,6 +309,29 @@ var
 begin
   AFormats := GetArchiveFormats.FindDecompressFormats(FileName);
   Result:= Length(AFormats) > 0;
+end;
+
+{ TJclSevenzipDecompressArchiveHelper }
+
+procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: String);
+var
+  AExtractCallback: IArchiveExtractCallback;
+begin
+  CheckNotDecompressing;
+
+  FDecompressing := True;
+  FDestinationDir := ADestinationDir;
+  AExtractCallback := TJclSevenzipExtractCallback.Create(Self);
+  try
+    OpenArchive;
+
+    SevenzipCheck(InArchive.Extract(@Index, 1, 0, AExtractCallback));
+    CheckOperationSuccess;
+  finally
+    FDestinationDir := '';
+    FDecompressing := False;
+    AExtractCallback := nil;
+  end;
 end;
 
 { TSevenZipUpdate }
