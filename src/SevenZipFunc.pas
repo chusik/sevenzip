@@ -40,8 +40,8 @@ type
   TSevenZipHandle = class(TSevenZipUpdate)
     Index,
     Count: LongWord;
-    FileName: AnsiString;
-    Directory: AnsiString;
+    FileName: UTF8String;
+    Directory: UTF8String;
     Archive: TJclDecompressArchive;
     ProcessDataProc: TProcessDataProcW;
   public
@@ -53,7 +53,7 @@ type
   { TJclSevenzipDecompressArchiveHelper }
 
   TJclSevenzipDecompressArchiveHelper = class helper for TJclSevenzipDecompressArchive
-    procedure ExtractItem(Index: Cardinal; const ADestinationDir: String);
+    procedure ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String);
   end;
 
 threadvar
@@ -85,6 +85,7 @@ function OpenArchiveW(var ArchiveData : tOpenArchiveDataW) : TArcHandle; stdcall
 var
   I: Integer;
   Handle: TSevenZipHandle;
+  FileNameUTF8: UTF8String;
   AFormats: TJclDecompressArchiveClassArray;
 begin
   Handle:= TSevenZipHandle.Create;
@@ -92,10 +93,11 @@ begin
   begin
     Index:= 0;
     try
-      AFormats := GetArchiveFormats.FindDecompressFormats(ArchiveData.ArcName);
+      FileNameUTF8 := UTF8Encode(WideString(ArchiveData.ArcName));
+      AFormats := GetArchiveFormats.FindDecompressFormats(FileNameUTF8);
       for I := Low(AFormats) to High(AFormats) do
       begin
-        Archive := AFormats[I].Create(ArchiveData.ArcName, 0, False);
+        Archive := AFormats[I].Create(FileNameUTF8, 0, False);
         try
           Archive.OnPassword:= JclCompressionPassword;
           Archive.OnProgress := JclCompressionProgress;
@@ -154,12 +156,12 @@ begin
         begin
           if Assigned(DestPath) then
           begin
-            FileName:= DestName;
-            Directory:= IncludeTrailingPathDelimiter(DestPath);
+            FileName:= UTF8Encode(WideString(DestName));
+            Directory:= IncludeTrailingPathDelimiter(UTF8Encode(WideString(DestPath)));
           end
           else begin
-            Directory:= ExtractFilePath(DestName);
-            FileName:= ExtractFileName(DestName);
+            Directory:= ExtractFilePath(UTF8Encode(WideString(DestName)));
+            FileName:= ExtractFileName(UTF8Encode(WideString(DestName)));
           end;
           try
             Result:= E_SUCCESS;
@@ -211,14 +213,16 @@ var
   I: Integer;
   FilePath: WideString;
   FileName: WideString;
+  FileNameUTF8: UTF8String;
   Archive: TJclUpdateArchive;
   AProgress: TSevenZipUpdate;
   AFormats: TJclUpdateArchiveClassArray;
 begin
-  AFormats := GetArchiveFormats.FindUpdateFormats(PackedFile);
+  FileNameUTF8 := UTF8Encode(WideString(PackedFile));
+  AFormats := GetArchiveFormats.FindUpdateFormats(FileNameUTF8);
   for I := Low(AFormats) to High(AFormats) do
   begin
-    Archive := AFormats[I].Create(PackedFile, 0, False);
+    Archive := AFormats[I].Create(FileNameUTF8, 0, False);
     try
       AProgress:= TSevenZipUpdate.Create;
       Archive.OnPassword:= AProgress.JclCompressionPassword;
@@ -237,10 +241,11 @@ begin
       while True do
       begin
         FileName := WideString(AddList);
+        FileNameUTF8:= UTF8Encode(WideString(SrcPath + FileName));
         if FileName[Length(FileName)] = PathDelim then
-          Archive.AddDirectory(FilePath + FileName, SrcPath + FileName)
+          Archive.AddDirectory(FilePath + FileName, FileNameUTF8)
         else
-          Archive.AddFile(FilePath + FileName, SrcPath + FileName);
+          Archive.AddFile(FilePath + FileName, FileNameUTF8);
         if (AddList + Length(FileName) + 1)^ = #0 then
           Break;
         Inc(AddList, Length(FileName) + 1);
@@ -331,7 +336,7 @@ end;
 
 { TJclSevenzipDecompressArchiveHelper }
 
-procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: String);
+procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String);
 var
   AExtractCallback: IArchiveExtractCallback;
 begin

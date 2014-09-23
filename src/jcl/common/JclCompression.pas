@@ -184,9 +184,6 @@ uses
 **************************************************************************************************}
 
 type
-
-  TFileName = WideString;
-
   TJclCompressionStream = class(TJclStream)
   private
     FOnProgress: TNotifyEvent;
@@ -1028,7 +1025,7 @@ type
     destructor Destroy; override;
     
     function AddDirectory(const PackedName: WideString;
-      const DirName: WideString = ''; RecurseIntoDir: Boolean = False;
+      const DirName: string = ''; RecurseIntoDir: Boolean = False;
       AddFilesInDir: Boolean = False): Integer; overload; virtual;
     function AddFile(const PackedName: WideString;
       const FileName: TFileName): Integer; overload; virtual;
@@ -3770,32 +3767,29 @@ end;
 {$IFDEF MSWINDOWS}
 
 function OpenFileStream(const FileName: TFileName; StreamAccess: TJclStreamAccess): TStream;
-var
-  FileNameUTF8: UTF8String;
 begin
   Result := nil;
-  FileNameUTF8 := UTF8Encode(FileName);
   case StreamAccess of
     saCreate:
-      Result := TFileStreamUTF8.Create(FileNameUTF8, fmCreate);
+      Result := TFileStreamUTF8.Create(FileName, fmCreate);
     saReadOnly:
-      if FileExistsUTF8(FileNameUTF8) then
-        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenRead or fmShareDenyWrite);
+      if FileExistsUTF8(FileName) then
+        Result := TFileStreamUTF8.Create(FileName, fmOpenRead or fmShareDenyWrite);
     saReadOnlyDenyNone:
-      if FileExistsUTF8(FileNameUTF8) then
-        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenRead or fmShareDenyNone);
+      if FileExistsUTF8(FileName) then
+        Result := TFileStreamUTF8.Create(FileName, fmOpenRead or fmShareDenyNone);
     saWriteOnly:
-      if FileExistsUTF8(FileNameUTF8) then
-        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenWrite)
+      if FileExistsUTF8(FileName) then
+        Result := TFileStreamUTF8.Create(FileName, fmOpenWrite)
       else
       if FileName <> '' then
-        Result := TFileStreamUTF8.Create(FileNameUTF8, fmCreate);
+        Result := TFileStreamUTF8.Create(FileName, fmCreate);
     saReadWrite:
-      if FileExistsUTF8(FileNameUTF8) then
-        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenReadWrite)
+      if FileExistsUTF8(FileName) then
+        Result := TFileStreamUTF8.Create(FileName, fmOpenReadWrite)
       else
       if FileName <> '' then
-        Result := TFileStreamUTF8.Create(FileNameUTF8, fmCreate);
+        Result := TFileStreamUTF8.Create(FileName, fmCreate);
   end;
 end;
 
@@ -3809,15 +3803,8 @@ begin
 end;
 
 function TJclCompressionItem.DeleteOutputFile: Boolean;
-var
-  FileNameUTF8: UTF8String;
 begin
-  Result := (Length(FFileName) > 0);
-  if Result then
-  begin
-    FileNameUTF8 := UTF8Encode(FileName);
-    Result := FileExistsUTF8(FileNameUTF8) and DeleteFileUTF8(FileNameUTF8);
-  end;
+  Result := (FFileName <> '') and FileExistsUTF8(FFileName) and DeleteFileUTF8(FFileName);
 end;
 
 destructor TJclCompressionItem.Destroy;
@@ -4084,7 +4071,7 @@ begin
   end;
 
   if (Value <> '') and (FArchive is TJclCompressionArchive)
-    and GetFileAttributesExW(PWideChar(Value), GetFileExInfoStandard, @AFindData) then
+    and GetFileAttributesExW(PWideChar(UTF8Decode(Value)), GetFileExInfoStandard, @AFindData) then
   begin
     FileSize := (Int64(AFindData.nFileSizeHigh) shl 32) or AFindData.nFileSizeLow;
     Attributes := AFindData.dwFileAttributes;
@@ -4238,7 +4225,7 @@ begin
   Result := FFileName <> '';
   if Result then
   begin
-    FileHandle := CreateFileW(PWideChar(FFileName), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, nil, OPEN_ALWAYS, 0, 0);
+    FileHandle := CreateFileW(PWideChar(UTF8Decode(FFileName)), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, nil, OPEN_ALWAYS, 0, 0);
     try
       // creation time should be the oldest
       if ipCreationTime in FValidProperties then
@@ -5109,7 +5096,7 @@ begin
 end;
 
 function TJclCompressArchive.AddDirectory(const PackedName: WideString;
-  const DirName: WideString; RecurseIntoDir: Boolean; AddFilesInDir: Boolean): Integer;
+  const DirName: string; RecurseIntoDir: Boolean; AddFilesInDir: Boolean): Integer;
 var
   AItem: TJclCompressionItem;
 begin
@@ -5548,7 +5535,7 @@ begin
             FreeAndNil(SrcStream);
           if OwnsDestStream then
             FreeAndNil(DestStream);
-          Handled := FileMove(SrcFileName, DestFileName, True);
+          Handled := RenameFileUTF8(SrcFileName, DestFileName);
         end
         else
         if (SrcFileName = '') and (DestFileName = '') and Assigned(SrcStream) and Assigned(DestStream) then
