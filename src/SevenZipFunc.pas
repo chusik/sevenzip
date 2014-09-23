@@ -59,7 +59,7 @@ type
 threadvar
   ProcessDataProcT: TProcessDataProcW;
 
-function ExceptToError(const E: Exception): Integer;
+function GetArchiveError(const E: Exception): Integer;
 begin
   if E is EFOpenError then
     Result:= E_EOPEN
@@ -70,7 +70,7 @@ begin
   else if E is EWriteError then
     Result:= E_EWRITE
   else
-    Result:= E_BAD_DATA;
+    Result:= MaxInt;
 end;
 
 function WinToDosTime(const WinTime: TFILETIME; var DosTime: Cardinal): LongBool;
@@ -92,33 +92,29 @@ begin
   with Handle do
   begin
     Index:= 0;
-    try
-      FileNameUTF8 := UTF8Encode(WideString(ArchiveData.ArcName));
-      AFormats := GetArchiveFormats.FindDecompressFormats(FileNameUTF8);
-      for I := Low(AFormats) to High(AFormats) do
-      begin
-        Archive := AFormats[I].Create(FileNameUTF8, 0, False);
-        try
-          Archive.OnPassword:= JclCompressionPassword;
-          Archive.OnProgress := JclCompressionProgress;
+    FileNameUTF8 := UTF8Encode(WideString(ArchiveData.ArcName));
+    AFormats := GetArchiveFormats.FindDecompressFormats(FileNameUTF8);
+    for I := Low(AFormats) to High(AFormats) do
+    begin
+      Archive := AFormats[I].Create(FileNameUTF8, 0, False);
+      try
+        Archive.OnPassword:= JclCompressionPassword;
+        Archive.OnProgress := JclCompressionProgress;
 
-          Archive.OnExtract:= JclCompressionExtract;
-          Archive.ListFiles;
+        Archive.OnExtract:= JclCompressionExtract;
+        Archive.ListFiles;
 
-          Count:= Archive.ItemCount;
+        Count:= Archive.ItemCount;
 
-          Exit(TArcHandle(Handle));
-        except
-          on E: exception do
-          begin
-            ArchiveData.ArcName:= PWideChar(WideString(E.Message));
-            Archive.Free;
-            Free;
-          end;
+        Exit(TArcHandle(Handle));
+      except
+        on E: Exception do
+        begin
+          ArchiveData.OpenResult:= GetArchiveError(E);
+          Archive.Free;
+          Free;
         end;
       end;
-    except
-      Free;
     end;
   end;
   Result:= 0;
@@ -172,7 +168,7 @@ begin
             TJclSevenzipDecompressArchive(Archive).ExtractItem(Index, Directory, Operation = PK_TEST);
           except
             on E: Exception do
-              Result:= ExceptToError(E);
+              Result:= GetArchiveError(E);
           end;
         end;
       else
@@ -258,7 +254,7 @@ begin
         Archive.Compress;
       except
         on E: Exception do
-          Exit(ExceptToError(E));
+          Exit(GetArchiveError(E));
       end;
       Exit(E_SUCCESS);
     finally
