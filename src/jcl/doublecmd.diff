@@ -1,0 +1,195 @@
+ jcl/source/common/JclAnsiStrings.pas |  4 ++--
+ jcl/source/common/JclCompression.pas | 41 +++++++++++++++++++++++++++++++++++-
+ jcl/source/common/JclDateTime.pas    |  2 +-
+ jcl/source/common/JclStrings.pas     |  4 ++--
+ 4 files changed, 45 insertions(+), 6 deletions(-)
+
+diff --git a/jcl/source/common/JclAnsiStrings.pas b/jcl/source/common/JclAnsiStrings.pas
+index 6d28b2d..96e0b16 100644
+--- a/jcl/source/common/JclAnsiStrings.pas
++++ b/jcl/source/common/JclAnsiStrings.pas
+@@ -518,8 +518,8 @@ procedure StrNormIndex(const StrLen: SizeInt; var Index: SizeInt; var Count: Siz
+ 
+ function ArrayOf(List: TJclAnsiStrings): TDynStringArray; overload;
+ 
+-function AnsiCompareNaturalStr(const S1, S2: AnsiString): SizeInt;
+-function AnsiCompareNaturalText(const S1, S2: AnsiString): SizeInt;
++function AnsiCompareNaturalStr(const S1, S2: AnsiString): SizeInt; overload;
++function AnsiCompareNaturalText(const S1, S2: AnsiString): SizeInt; overload;
+ 
+ // Explicit ANSI version of former/deprecated SysUtils PAnsiChar functions
+ {$IFNDEF DEPRECATED_SYSUTILS_ANSISTRINGS}
+diff --git a/jcl/source/common/JclCompression.pas b/jcl/source/common/JclCompression.pas
+index e5e6a2f..262ad82 100644
+--- a/jcl/source/common/JclCompression.pas
++++ b/jcl/source/common/JclCompression.pas
+@@ -75,7 +75,10 @@ uses
+   ZLib,
+   {$ENDIF ZLIB_RTL}
+   {$ENDIF ~HAS_UNITSCOPE}
+-  zlibh, bzip2, JclWideStrings, JclBase, JclStreams;
++  {$IFNDEF FPC}
++  zlibh, bzip2,
++  {$ENDIF FPC}
++  JclWideStrings, JclBase, JclStreams;
+ 
+ {$IFDEF RTL230_UP}
+ {$HPPEMIT '// To avoid ambiguity with System::Zlib::z_stream_s we force using ours'}
+@@ -256,6 +259,8 @@ function GetStreamFormats: TJclCompressionStreamFormats;
+ type
+   TJclCompressionLevel = Integer;
+ 
++{$IFNDEF FPC}
++
+   TJclZLibCompressStream = class(TJclCompressStream)
+   private
+     FWindowBits: Integer;
+@@ -562,8 +567,12 @@ type
+     function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
+   end;
+ 
++{$ENDIF FPC}
++
+   EJclCompressionError = class(EJclError);
+ 
++{$IFNDEF FPC}
++
+   // callback type used in helper functions below:
+   TJclCompressStreamProgressCallback = procedure(FileSize, Position: Int64; UserData: Pointer) of object;
+ 
+@@ -586,6 +595,8 @@ procedure BZip2Stream(SourceStream, DestinationStream: TStream; CompressionLevel
+ procedure UnBZip2Stream(SourceStream, DestinationStream: TStream;
+   ProgressCallback: TJclCompressStreamProgressCallback = nil; UserData: Pointer = nil);
+ 
++{$ENDIF FPC}
++
+ // archive ancestor classes
+ {$IFDEF MSWINDOWS}
+ type
+@@ -595,6 +606,7 @@ type
+     var AVolumeMaxSize: Int64) of object;
+   TJclCompressionProgressEvent = procedure(Sender: TObject; const Value, MaxValue: Int64) of object;
+   TJclCompressionRatioEvent = procedure(Sender: TObject; const InSize, OutSize: Int64) of object;
++  TJclCompressionPasswordEvent = procedure(Sender: TObject; var Password: WideString) of object;
+ 
+   TJclCompressionItemProperty = (ipPackedName, ipPackedSize, ipPackedExtension,
+     ipFileSize, ipFileName, ipAttributes, ipCreationTime, ipLastAccessTime,
+@@ -770,6 +782,7 @@ type
+     FOnRatio: TJclCompressionRatioEvent;
+     FOnVolume: TJclCompressionVolumeEvent;
+     FOnVolumeMaxSize: TJclCompressionVolumeMaxSizeEvent;
++    FOnPassword: TJclCompressionPasswordEvent;
+     FPassword: WideString;
+     FVolumeIndex: Integer;
+     FVolumeIndexOffset: Integer;
+@@ -855,6 +868,7 @@ type
+     property OnVolume: TJclCompressionVolumeEvent read FOnVolume write FOnVolume;
+     property OnVolumeMaxSize: TJclCompressionVolumeMaxSizeEvent read FOnVolumeMaxSize
+       write FOnVolumeMaxSize;
++    property OnPassword: TJclCompressionPasswordEvent read FOnPassword write FOnPassword;
+     property Password: WideString read FPassword write FPassword;
+ 
+     property SupportsNestedArchive: Boolean read GetSupportsNestedArchive;
+@@ -2319,12 +2333,14 @@ begin
+   inherited Create;
+   FCompressFormats := TList.Create;
+   FDecompressFormats := TList.Create;
++{$IFNDEF FPC}
+   RegisterFormat(TJclZLibCompressStream);
+   RegisterFormat(TJclZLibDecompressStream);
+   RegisterFormat(TJclGZIPCompressionStream);
+   RegisterFormat(TJclGZIPDecompressionStream);
+   RegisterFormat(TJclBZIP2CompressionStream);
+   RegisterFormat(TJclBZIP2DecompressionStream);
++{$ENDIF FPC}
+ end;
+ 
+ destructor TJclCompressionStreamFormats.Destroy;
+@@ -2433,6 +2449,8 @@ begin
+   Result := TJclCompressionStreamFormats(GlobalStreamFormats);
+ end;
+ 
++{$IFNDEF FPC}
++
+ //=== { TJclZLibCompressionStream } ==========================================
+ 
+ { Error checking helper }
+@@ -3743,6 +3761,8 @@ begin
+   end;
+ end;
+ 
++{$ENDIF FPC}
++
+ {$IFDEF MSWINDOWS}
+ 
+ function OpenFileStream(const FileName: TFileName; StreamAccess: TJclStreamAccess): TStream;
+@@ -6389,6 +6409,11 @@ function TJclSevenzipUpdateCallback.CryptoGetTextPassword2(
+ begin
+   if Assigned(PasswordIsDefined) then
+   begin
++    if Length(FArchive.FPassword) = 0 then
++    begin
++      if Assigned(FArchive.OnPassword) then
++        FArchive.OnPassword(FArchive, FArchive.FPassword);
++    end;
+     if FArchive.Password <> '' then
+       PasswordIsDefined^ := Integer($FFFFFFFF)
+     else
+@@ -7422,7 +7447,14 @@ function TJclSevenzipOpenCallback.CryptoGetTextPassword(
+   password: PBStr): HRESULT;
+ begin
+   if Assigned(password) then
++  begin
++    if Length(FArchive.FPassword) = 0 then
++    begin
++      if Assigned(FArchive.OnPassword) then
++        FArchive.OnPassword(FArchive, FArchive.FPassword);
++    end;
+     password^ := SysAllocString(PWideChar(FArchive.Password));
++  end;
+   Result := S_OK;
+ end;
+ 
+@@ -7456,7 +7488,14 @@ function TJclSevenzipExtractCallback.CryptoGetTextPassword(
+   password: PBStr): HRESULT;
+ begin
+   if Assigned(password) then
++  begin
++    if Length(FArchive.FPassword) = 0 then
++    begin
++      if Assigned(FArchive.OnPassword) then
++        FArchive.OnPassword(FArchive, FArchive.FPassword);
++    end;
+     password^ := SysAllocString(PWideChar(FArchive.Password));
++  end;
+   Result := S_OK;
+ end;
+ 
+diff --git a/jcl/source/common/JclDateTime.pas b/jcl/source/common/JclDateTime.pas
+index d65951b..3a7917e 100644
+--- a/jcl/source/common/JclDateTime.pas
++++ b/jcl/source/common/JclDateTime.pas
+@@ -87,7 +87,7 @@ const
+ 
+ { Encode / Decode functions }
+ 
+-function EncodeDate(const Year: Integer; Month, Day: Word): TDateTime;
++function EncodeDate(const Year: Integer; Month, Day: Word): TDateTime; overload;
+ procedure DecodeDate(Date: TDateTime; out Year, Month, Day: Word); overload;
+ procedure DecodeDate(Date: TDateTime; out Year: Integer; out Month, Day: Word); overload;
+ procedure DecodeDate(Date: TDateTime; out Year, Month, Day: Integer); overload;
+diff --git a/jcl/source/common/JclStrings.pas b/jcl/source/common/JclStrings.pas
+index 84f7099..2c0cabd 100644
+--- a/jcl/source/common/JclStrings.pas
++++ b/jcl/source/common/JclStrings.pas
+@@ -604,8 +604,8 @@ procedure StrResetLength(var S: UnicodeString); overload;
+ {$ENDIF SUPPORTS_UNICODE_STRING}
+ 
+ // natural comparison functions
+-function CompareNaturalStr(const S1, S2: string): SizeInt;
+-function CompareNaturalText(const S1, S2: string): SizeInt;
++function CompareNaturalStr(const S1, S2: string): SizeInt; overload;
++function CompareNaturalText(const S1, S2: string): SizeInt; overload;
+ 
+ {$IFNDEF UNICODE_RTL_DATABASE}
+ // internal structures published to make function inlining working
