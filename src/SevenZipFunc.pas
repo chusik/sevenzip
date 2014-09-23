@@ -24,7 +24,7 @@ function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
 implementation
 
 uses
-  Windows, SysUtils, Classes, JclCompression, sevenzip;
+  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip;
 
 type
 
@@ -224,9 +224,16 @@ begin
       Archive.OnPassword:= AProgress.JclCompressionPassword;
       Archive.OnProgress:= AProgress.JclCompressionProgress;
 
-      if FileExists(PackedFile) then Archive.ListFiles;
+      if (GetFileAttributesW(PackedFile) <> INVALID_FILE_ATTRIBUTES) then
+        Archive.ListFiles;
 
-      if Assigned(SubPath) then FilePath:= IncludeTrailingPathDelimiter(WideString(SubPath));
+      if Assigned(SubPath) then
+      begin
+        FilePath:= WideString(SubPath);
+        if FilePath[Length(FilePath)] <> PathDelim then
+          FilePath := FilePath + PathDelim;
+      end;
+
       while True do
       begin
         FileName := WideString(AddList);
