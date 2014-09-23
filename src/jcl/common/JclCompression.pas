@@ -600,6 +600,7 @@ type
     var AVolumeMaxSize: Int64) of object;
   TJclCompressionProgressEvent = procedure(Sender: TObject; const Value, MaxValue: Int64) of object;
   TJclCompressionRatioEvent = procedure(Sender: TObject; const InSize, OutSize: Int64) of object;
+  TJclCompressionPasswordEvent = procedure(Sender: TObject; var Password: WideString) of object;
 
   TJclCompressionItemProperty = (ipPackedName, ipPackedSize, ipPackedExtension,
     ipFileSize, ipFileName, ipAttributes, ipCreationTime, ipLastAccessTime,
@@ -775,6 +776,7 @@ type
     FOnRatio: TJclCompressionRatioEvent;
     FOnVolume: TJclCompressionVolumeEvent;
     FOnVolumeMaxSize: TJclCompressionVolumeMaxSizeEvent;
+    FOnPassword: TJclCompressionPasswordEvent;
     FPassword: WideString;
     FVolumeIndex: Integer;
     FVolumeIndexOffset: Integer;
@@ -860,6 +862,7 @@ type
     property OnVolume: TJclCompressionVolumeEvent read FOnVolume write FOnVolume;
     property OnVolumeMaxSize: TJclCompressionVolumeMaxSizeEvent read FOnVolumeMaxSize
       write FOnVolumeMaxSize;
+    property OnPassword: TJclCompressionPasswordEvent read FOnPassword write FOnPassword;
     property Password: WideString read FPassword write FPassword;
 
     property SupportsNestedArchive: Boolean read GetSupportsNestedArchive;
@@ -6397,6 +6400,11 @@ function TJclSevenzipUpdateCallback.CryptoGetTextPassword2(
 begin
   if Assigned(PasswordIsDefined) then
   begin
+    if Length(FArchive.FPassword) = 0 then
+    begin
+      if Assigned(FArchive.OnPassword) then
+        FArchive.OnPassword(FArchive, FArchive.FPassword);
+    end;
     if FArchive.Password <> '' then
       PasswordIsDefined^ := Integer($FFFFFFFF)
     else
@@ -7430,7 +7438,14 @@ function TJclSevenzipOpenCallback.CryptoGetTextPassword(
   password: PBStr): HRESULT;
 begin
   if Assigned(password) then
+  begin
+    if Length(FArchive.FPassword) = 0 then
+    begin
+      if Assigned(FArchive.OnPassword) then
+        FArchive.OnPassword(FArchive, FArchive.FPassword);
+    end;
     password^ := SysAllocString(PWideChar(FArchive.Password));
+  end;
   Result := S_OK;
 end;
 
@@ -7464,7 +7479,14 @@ function TJclSevenzipExtractCallback.CryptoGetTextPassword(
   password: PBStr): HRESULT;
 begin
   if Assigned(password) then
+  begin
+    if Length(FArchive.FPassword) = 0 then
+    begin
+      if Assigned(FArchive.OnPassword) then
+        FArchive.OnPassword(FArchive, FArchive.FPassword);
+    end;
     password^ := SysAllocString(PWideChar(FArchive.Password));
+  end;
   Result := S_OK;
 end;
 

@@ -28,9 +28,16 @@ uses
 
 type
 
+  { TSevenZipUpdate }
+
+  TSevenZipUpdate = class
+    procedure JclCompressionPassword(Sender: TObject; var Password: WideString);
+    procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64); virtual;
+  end;
+
   { TSevenZipHandle }
 
-  TSevenZipHandle = class
+  TSevenZipHandle = class(TSevenZipUpdate)
     Index,
     Count: LongWord;
     FileName: AnsiString;
@@ -38,15 +45,9 @@ type
     Archive: TJclDecompressArchive;
     ProcessDataProc: TProcessDataProcW;
   public
-    procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64);
+    procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64); override;
     function JclCompressionExtract(Sender: TObject; AIndex: Integer;
       var AFileName: TFileName; var Stream: TStream; var AOwnsStream: Boolean): Boolean;
-  end;
-
-  { TSevenZipUpdate }
-
-  TSevenZipUpdate = class
-    procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64);
   end;
 
   { TJclSevenzipDecompressArchiveHelper }
@@ -96,6 +97,7 @@ begin
       begin
         Archive := AFormats[I].Create(ArchiveData.ArcName, 0, False);
         try
+          Archive.OnPassword:= JclCompressionPassword;
           Archive.OnProgress := JclCompressionProgress;
 
           Archive.OnExtract:= JclCompressionExtract;
@@ -105,15 +107,19 @@ begin
 
           Exit(TArcHandle(Handle));
         except
-          Archive.Free;
-          Free;
+          on E: exception do
+          begin
+            ArchiveData.ArcName:= PWideChar(WideString(E.Message));
+            Archive.Free;
+            Free;
+          end;
         end;
       end;
     except
       Free;
     end;
   end;
-  Result:= wcxInvalidHandle;
+  Result:= 0;
 end;
 
 function ReadHeaderExW(hArcData : TArcHandle; var HeaderData: THeaderDataExW) : Integer; stdcall;
@@ -215,6 +221,7 @@ begin
     Archive := AFormats[I].Create(PackedFile, 0, False);
     try
       AProgress:= TSevenZipUpdate.Create;
+      Archive.OnPassword:= AProgress.JclCompressionPassword;
       Archive.OnProgress:= AProgress.JclCompressionProgress;
 
       if FileExists(PackedFile) then Archive.ListFiles;
@@ -250,9 +257,8 @@ function DeleteFilesW(PackedFile, DeleteList: PWideChar): Integer; stdcall;
 var
   I: Integer;
   Archive: TJclUpdateArchive;
+  AProgress: TSevenZipUpdate;
   AFormats: TJclUpdateArchiveClassArray;
-
-
 var
 
  pFileName : PWideChar;
@@ -267,11 +273,11 @@ begin
     begin
       Archive := AFormats[I].Create(PackedFile, 0, False);
       try
-        if not (Archive is TJclUpdateArchive) then Continue;
+        AProgress:= TSevenZipUpdate.Create;
+        Archive.OnPassword:= AProgress.JclCompressionPassword;
+        Archive.OnProgress:= AProgress.JclCompressionProgress;
 
         Archive.ListFiles;
-
-//        Archive.OnProgress := JclCompressionProgress;
 
 // Parse file list.
 pFileName := DeleteList;
@@ -291,14 +297,17 @@ begin
   if pFileName^ = #0 then
     Break;  // end of list
 end;
-(Archive as TJclUpdateArchive).Compress;
-
-
-        Archive.Free;
+try
+Archive.Compress;
+except
+  on E: Exception do
+    FileNameUTF8:= E.Message;
+end;
 
         Exit(E_SUCCESS);
-      except
-        //CloseAllArchive;
+      finally
+        Archive.Free;
+        AProgress.Free;
       end;
     end;
 
@@ -337,6 +346,12 @@ begin
 end;
 
 { TSevenZipUpdate }
+
+procedure TSevenZipUpdate.JclCompressionPassword(Sender: TObject;
+  var Password: WideString);
+begin
+  Password:= '123';
+end;
 
 procedure TSevenZipUpdate.JclCompressionProgress(Sender: TObject; const Value,
   MaxValue: Int64);
