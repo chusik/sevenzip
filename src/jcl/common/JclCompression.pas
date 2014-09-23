@@ -1028,7 +1028,7 @@ type
     destructor Destroy; override;
     
     function AddDirectory(const PackedName: WideString;
-      const DirName: string = ''; RecurseIntoDir: Boolean = False;
+      const DirName: WideString = ''; RecurseIntoDir: Boolean = False;
       AddFilesInDir: Boolean = False): Integer; overload; virtual;
     function AddFile(const PackedName: WideString;
       const FileName: TFileName): Integer; overload; virtual;
@@ -5109,7 +5109,7 @@ begin
 end;
 
 function TJclCompressArchive.AddDirectory(const PackedName: WideString;
-  const DirName: string; RecurseIntoDir: Boolean; AddFilesInDir: Boolean): Integer;
+  const DirName: WideString; RecurseIntoDir: Boolean; AddFilesInDir: Boolean): Integer;
 var
   AItem: TJclCompressionItem;
 begin
