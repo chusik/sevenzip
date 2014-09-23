@@ -78,7 +78,8 @@ uses
   {$IFNDEF FPC}
   zlibh, bzip2,
   {$ENDIF FPC}
-  JclWideStrings, JclBase, JclStreams;
+  JclWideStrings, JclBase, JclStreams,
+  LazUTF8Classes, LazFileUtils;
 
 {$IFDEF RTL230_UP}
 {$HPPEMIT '// To avoid ambiguity with System::Zlib::z_stream_s we force using ours'}
@@ -183,6 +184,9 @@ uses
 **************************************************************************************************}
 
 type
+
+  TFileName = WideString;
+
   TJclCompressionStream = class(TJclStream)
   private
     FOnProgress: TNotifyEvent;
@@ -3766,29 +3770,32 @@ end;
 {$IFDEF MSWINDOWS}
 
 function OpenFileStream(const FileName: TFileName; StreamAccess: TJclStreamAccess): TStream;
+var
+  FileNameUTF8: UTF8String;
 begin
   Result := nil;
+  FileNameUTF8 := UTF8Encode(FileName);
   case StreamAccess of
     saCreate:
-      Result := TFileStream.Create(FileName, fmCreate);
+      Result := TFileStreamUTF8.Create(FileNameUTF8, fmCreate);
     saReadOnly:
-      if FileExists(FileName) then
-        Result := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+      if FileExistsUTF8(FileNameUTF8) then
+        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenRead or fmShareDenyWrite);
     saReadOnlyDenyNone:
-      if FileExists(FileName) then
-        Result := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
+      if FileExistsUTF8(FileNameUTF8) then
+        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenRead or fmShareDenyNone);
     saWriteOnly:
-      if FileExists(FileName) then
-        Result := TFileStream.Create(FileName, fmOpenWrite)
+      if FileExistsUTF8(FileNameUTF8) then
+        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenWrite)
       else
       if FileName <> '' then
-        Result := TFileStream.Create(FileName, fmCreate);
+        Result := TFileStreamUTF8.Create(FileNameUTF8, fmCreate);
     saReadWrite:
-      if FileExists(FileName) then
-        Result := TFileStream.Create(FileName, fmOpenReadWrite)
+      if FileExistsUTF8(FileNameUTF8) then
+        Result := TFileStreamUTF8.Create(FileNameUTF8, fmOpenReadWrite)
       else
       if FileName <> '' then
-        Result := TFileStream.Create(FileName, fmCreate);
+        Result := TFileStreamUTF8.Create(FileNameUTF8, fmCreate);
   end;
 end;
 
@@ -3802,8 +3809,15 @@ begin
 end;
 
 function TJclCompressionItem.DeleteOutputFile: Boolean;
+var
+  FileNameUTF8: UTF8String;
 begin
-  Result := (FFileName <> '') and FileExists(FFileName) and FileDelete(FFileName);
+  Result := (Length(FFileName) > 0);
+  if Result then
+  begin
+    FileNameUTF8 := UTF8Encode(FileName);
+    Result := FileExistsUTF8(FileNameUTF8) and DeleteFileUTF8(FileNameUTF8);
+  end;
 end;
 
 destructor TJclCompressionItem.Destroy;
@@ -4070,7 +4084,7 @@ begin
   end;
 
   if (Value <> '') and (FArchive is TJclCompressionArchive)
-    and GetFileAttributesEx(PChar(Value), GetFileExInfoStandard, @AFindData) then
+    and GetFileAttributesExW(PWideChar(Value), GetFileExInfoStandard, @AFindData) then
   begin
     FileSize := (Int64(AFindData.nFileSizeHigh) shl 32) or AFindData.nFileSizeLow;
     Attributes := AFindData.dwFileAttributes;
@@ -4224,7 +4238,7 @@ begin
   Result := FFileName <> '';
   if Result then
   begin
-    FileHandle := CreateFile(PChar(FFileName), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, nil, OPEN_ALWAYS, 0, 0);
+    FileHandle := CreateFileW(PWideChar(FFileName), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, nil, OPEN_ALWAYS, 0, 0);
     try
       // creation time should be the oldest
       if ipCreationTime in FValidProperties then
