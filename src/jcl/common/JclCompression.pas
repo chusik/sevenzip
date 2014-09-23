@@ -75,6 +75,9 @@ uses
   ZLib,
   {$ENDIF ZLIB_RTL}
   {$ENDIF ~HAS_UNITSCOPE}
+  {$IFNDEF FPC}
+  zlibh, bzip2,
+  {$ENDIF FPC}
   JclWideStrings, JclBase, JclStreams;
 
 {$IFDEF RTL230_UP}
@@ -256,7 +259,7 @@ function GetStreamFormats: TJclCompressionStreamFormats;
 type
   TJclCompressionLevel = Integer;
 
-{$IFDEF HELLO}
+{$IFNDEF FPC}
 
   TJclZLibCompressStream = class(TJclCompressStream)
   private
@@ -563,10 +566,13 @@ type
     function Read(var Buffer; Count: Longint): Longint; override;
     function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
   end;
-{$ENDIF}
+
+{$ENDIF FPC}
+
   EJclCompressionError = class(EJclError);
 
-  {$IFDEF HELLO}
+{$IFNDEF FPC}
+
   // callback type used in helper functions below:
   TJclCompressStreamProgressCallback = procedure(FileSize, Position: Int64; UserData: Pointer) of object;
 
@@ -589,7 +595,7 @@ procedure BZip2Stream(SourceStream, DestinationStream: TStream; CompressionLevel
 procedure UnBZip2Stream(SourceStream, DestinationStream: TStream;
   ProgressCallback: TJclCompressStreamProgressCallback = nil; UserData: Pointer = nil);
 
-{$ENDIF}
+{$ENDIF FPC}
 
 // archive ancestor classes
 {$IFDEF MSWINDOWS}
@@ -2327,12 +2333,14 @@ begin
   inherited Create;
   FCompressFormats := TList.Create;
   FDecompressFormats := TList.Create;
-//  RegisterFormat(TJclZLibCompressStream);
-//  RegisterFormat(TJclZLibDecompressStream);
-//  RegisterFormat(TJclGZIPCompressionStream);
-//  RegisterFormat(TJclGZIPDecompressionStream);
-//  RegisterFormat(TJclBZIP2CompressionStream);
-//  RegisterFormat(TJclBZIP2DecompressionStream);
+{$IFNDEF FPC}
+  RegisterFormat(TJclZLibCompressStream);
+  RegisterFormat(TJclZLibDecompressStream);
+  RegisterFormat(TJclGZIPCompressionStream);
+  RegisterFormat(TJclGZIPDecompressionStream);
+  RegisterFormat(TJclBZIP2CompressionStream);
+  RegisterFormat(TJclBZIP2DecompressionStream);
+{$ENDIF FPC}
 end;
 
 destructor TJclCompressionStreamFormats.Destroy;
@@ -2441,7 +2449,7 @@ begin
   Result := TJclCompressionStreamFormats(GlobalStreamFormats);
 end;
 
-{$IFDEF HELLO}
+{$IFNDEF FPC}
 
 //=== { TJclZLibCompressionStream } ==========================================
 
@@ -3752,7 +3760,8 @@ begin
     BZip2Stream.Free;
   end;
 end;
-{$ENDIF}
+
+{$ENDIF FPC}
 
 {$IFDEF MSWINDOWS}
 
