@@ -53,7 +53,7 @@ type
   { TJclSevenzipDecompressArchiveHelper }
 
   TJclSevenzipDecompressArchiveHelper = class helper for TJclSevenzipDecompressArchive
-    procedure ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String);
+    procedure ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
   end;
 
 threadvar
@@ -152,20 +152,24 @@ begin
   try
     with Handle do
     case Operation of
+      PK_TEST,
       PK_EXTRACT:
         begin
-          if Assigned(DestPath) then
+          if Operation = PK_EXTRACT then
           begin
-            FileName:= UTF8Encode(WideString(DestName));
-            Directory:= IncludeTrailingPathDelimiter(UTF8Encode(WideString(DestPath)));
-          end
-          else begin
-            Directory:= ExtractFilePath(UTF8Encode(WideString(DestName)));
-            FileName:= ExtractFileName(UTF8Encode(WideString(DestName)));
+            if Assigned(DestPath) then
+            begin
+              FileName:= UTF8Encode(WideString(DestName));
+              Directory:= IncludeTrailingPathDelimiter(UTF8Encode(WideString(DestPath)));
+            end
+            else begin
+              Directory:= ExtractFilePath(UTF8Encode(WideString(DestName)));
+              FileName:= ExtractFileName(UTF8Encode(WideString(DestName)));
+            end;
           end;
           try
             Result:= E_SUCCESS;
-            TJclSevenzipDecompressArchive(Archive).ExtractItem(Index, Directory);
+            TJclSevenzipDecompressArchive(Archive).ExtractItem(Index, Directory, Operation = PK_TEST);
           except
             on E: Exception do
               Result:= ExceptToError(E);
@@ -336,7 +340,7 @@ end;
 
 { TJclSevenzipDecompressArchiveHelper }
 
-procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String);
+procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
 var
   AExtractCallback: IArchiveExtractCallback;
 begin
@@ -348,7 +352,7 @@ begin
   try
     OpenArchive;
 
-    SevenzipCheck(InArchive.Extract(@Index, 1, 0, AExtractCallback));
+    SevenzipCheck(InArchive.Extract(@Index, 1, Cardinal(Verify), AExtractCallback));
     CheckOperationSuccess;
   finally
     FDestinationDir := '';
