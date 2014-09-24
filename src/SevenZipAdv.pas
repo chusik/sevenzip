@@ -41,8 +41,17 @@ type
   TArchiveFormats = array of TArchiveFormat;
   TJclSevenzipCompressArchiveClass = class of TJclSevenzipCompressArchive;
 
+type
+  TArchiveFormatCache = record
+    ArchiveName: UTF8String;
+    ArchiveClassArray: TJclDecompressArchiveClassArray;
+  end;
+
 var
   ArchiveFormatsX: TArchiveFormats;
+
+var
+  ArchiveFormatCache: TArchiveFormatCache;
 
 function ReadStringProp(FormatIndex: Cardinal; PropID: TPropID;
   out Value: UnicodeString): LongBool;
@@ -160,6 +169,14 @@ var
   ArchiveClass: TJclDecompressArchiveClass;
   Buffer: array[0..Pred(BufferSize)] of Byte;
 begin
+  // Try to find archive type in cache
+  if ArchiveFormatCache.ArchiveName = AFileName then
+    Exit(ArchiveFormatCache.ArchiveClassArray)
+  else begin
+    ArchiveFormatCache.ArchiveName:= AFileName;
+    SetLength(ArchiveFormatCache.ArchiveClassArray, 0);
+  end;
+
   Result:= GetArchiveFormats.FindDecompressFormats(AFileName);
 
   if Length(ArchiveFormatsX) = 0 then LoadArchiveFormats(ArchiveFormatsX);
@@ -197,6 +214,8 @@ begin
       end;
     end;
   end;
+  // Save archive type in cache
+  ArchiveFormatCache.ArchiveClassArray:= Result;
 end;
 
 { TJclSevenzipDecompressArchiveHelper }
