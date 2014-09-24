@@ -345,7 +345,8 @@ begin
   if Assigned(ProcessDataProcT) then
   begin
     Percent:= 1000 + (Value * 100) div MaxValue;
-    ProcessDataProcT(PWideChar(Archive.Items[Archive.CurrentItemIndex].PackedName), -Percent);
+    // If the user has clicked on Cancel, the function returns zero
+    Archive.CancelCurrentOperation:= ProcessDataProcT(PWideChar(Archive.Items[Archive.CurrentItemIndex].PackedName), -Percent) = 0;
   end;
 end;
 
@@ -360,7 +361,8 @@ begin
   if Assigned(ProcessDataProc) then
   begin
     Percent:= 1000 + (Value * 100) div MaxValue;
-    ProcessDataProc(PWideChar(Archive.Items[Archive.CurrentItemIndex].PackedName), -Percent);
+    // If the user has clicked on Cancel, the function returns zero
+    Archive.CancelCurrentOperation:= ProcessDataProc(PWideChar(Archive.Items[Archive.CurrentItemIndex].PackedName), -Percent) = 0;
   end;
 end;
 
