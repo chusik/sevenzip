@@ -9,6 +9,7 @@ uses
 
 type
   TBytes = array of Byte;
+  TJclCompressionArchiveClassArray = array of TJclCompressionArchiveClass;
 
 type
 
@@ -30,6 +31,8 @@ type
     procedure ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
   end;
 
+function FindUpdateFormats(const AFileName: TFileName): TJclUpdateArchiveClassArray;
+function FindCompressFormats(const AFileName: TFileName): TJclCompressArchiveClassArray;
 function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
 
 implementation
@@ -39,19 +42,24 @@ uses
 
 type
   TArchiveFormats = array of TArchiveFormat;
+  TJclSevenzipUpdateArchiveClass = class of TJclSevenzipUpdateArchive;
   TJclSevenzipCompressArchiveClass = class of TJclSevenzipCompressArchive;
+  TJclSevenzipDecompressArchiveClass = class of TJclSevenzipDecompressArchive;
+  TJclArchiveType = (atUpdateArchive, atCompressArchive, atDecompressArchive);
 
 type
   TArchiveFormatCache = record
     ArchiveName: UTF8String;
-    ArchiveClassArray: TJclDecompressArchiveClassArray;
+    ArchiveClassArray: TJclCompressionArchiveClassArray;
   end;
 
 var
   ArchiveFormatsX: TArchiveFormats;
 
 var
-  ArchiveFormatCache: TArchiveFormatCache;
+  UpdateFormatsCache: TArchiveFormatCache;
+  CompressFormatsCache: TArchiveFormatCache;
+  DecompressFormatsCache: TArchiveFormatCache;
 
 function ReadStringProp(FormatIndex: Cardinal; PropID: TPropID;
   out Value: UnicodeString): LongBool;
@@ -135,7 +143,7 @@ begin
   SetLength(ArchiveFormats, Idx);
 end;
 
-function Contains(const ArrayToSearch: TJclDecompressArchiveClassArray; const ArchiveClass: TJclDecompressArchiveClass): Boolean;
+function Contains(const ArrayToSearch: TJclCompressionArchiveClassArray; const ArchiveClass: TJclCompressionArchiveClass): Boolean;
 var
   Index: Integer;
 begin
@@ -145,77 +153,147 @@ begin
   Result := False;
 end;
 
-function FindDecompressFormat(const ClassID: TGUID): TJclDecompressArchiveClass;
+function FindArchiveFormat(const ClassID: TGUID; ArchiveType: TJclArchiveType): TJclCompressionArchiveClass;
 var
   Index: Integer;
-  ArchiveClass: TJclSevenzipCompressArchiveClass;
+  UpdateClass: TJclSevenzipUpdateArchiveClass;
+  CompressClass: TJclSevenzipCompressArchiveClass;
+  DecompressClass: TJclSevenzipDecompressArchiveClass;
 begin
-  for Index:= 0 to GetArchiveFormats.DecompressFormatCount - 1 do
-  begin
-    ArchiveClass:= TJclSevenzipCompressArchiveClass(GetArchiveFormats.DecompressFormats[Index]);
-    if GUIDEquals(ClassID, ArchiveClass.ArchiveCLSID) then
-      Exit(GetArchiveFormats.DecompressFormats[Index]);
+  case ArchiveType of
+    atUpdateArchive:
+      for Index:= 0 to GetArchiveFormats.UpdateFormatCount - 1 do
+      begin
+        UpdateClass:= TJclSevenzipUpdateArchiveClass(GetArchiveFormats.UpdateFormats[Index]);
+        if GUIDEquals(ClassID, UpdateClass.ArchiveCLSID) then
+          Exit(GetArchiveFormats.UpdateFormats[Index]);
+      end;
+    atCompressArchive:
+      for Index:= 0 to GetArchiveFormats.CompressFormatCount - 1 do
+      begin
+        CompressClass:= TJclSevenzipCompressArchiveClass(GetArchiveFormats.CompressFormats[Index]);
+        if GUIDEquals(ClassID, CompressClass.ArchiveCLSID) then
+          Exit(GetArchiveFormats.CompressFormats[Index]);
+      end;
+    atDecompressArchive:
+      for Index:= 0 to GetArchiveFormats.DecompressFormatCount - 1 do
+      begin
+        DecompressClass:= TJclSevenzipDecompressArchiveClass(GetArchiveFormats.DecompressFormats[Index]);
+        if GUIDEquals(ClassID, DecompressClass.ArchiveCLSID) then
+          Exit(GetArchiveFormats.DecompressFormats[Index]);
+      end;
   end;
   Result:= nil;
 end;
 
-function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
+procedure FindArchiveFormats(const AFileName: TFileName; ArchiveType: TJclArchiveType; out Result: TJclCompressionArchiveClassArray);
 const
   BufferSize = 524288;
 var
   AFile: THandle;
-  I, Idx, Index: Integer;
+  Idx, Index: Integer;
   ArchiveFormat: TArchiveFormat;
-  ArchiveClass: TJclDecompressArchiveClass;
+  ArchiveClass: TJclCompressionArchiveClass;
   Buffer: array[0..Pred(BufferSize)] of Byte;
 begin
+  if Length(ArchiveFormatsX) = 0 then LoadArchiveFormats(ArchiveFormatsX);
+
+    AFile:= FileOpenUTF8(AFileName, fmOpenRead or fmShareDenyNone);
+    if AFile = feInvalidHandle then Exit;
+    try
+     if FileRead(AFile, Buffer, SizeOf(Buffer)) = 0 then
+       Exit;
+    finally
+      FileClose(AFile);
+    end;
+
+    for Index := Low(ArchiveFormatsX) to High(ArchiveFormatsX) do
+    begin
+      ArchiveFormat:= ArchiveFormatsX[Index];
+
+      if (not ArchiveFormat.Update) and (ArchiveType in [atUpdateArchive, atCompressArchive]) then
+        Continue;
+
+      // Skip container types
+      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
+      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
+      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
+
+      if Length(ArchiveFormat.StartSignature) = 0 then Continue;
+      for Idx:= 0 to Pred(BufferSize) - Length(ArchiveFormat.StartSignature) do
+      begin
+        if CompareMem(@Buffer[Idx], @ArchiveFormat.StartSignature[0], Length(ArchiveFormat.StartSignature)) then
+        begin
+          ArchiveClass:= FindArchiveFormat(ArchiveFormat.ClassID, ArchiveType);
+          if Assigned(ArchiveClass) and not Contains(Result, ArchiveClass) then
+          begin
+            SetLength(Result, Length(Result) + 1);
+            Result[High(Result)] := ArchiveClass;
+          end;
+          Break;
+        end;
+      end;
+    end;
+end;
+
+function FindUpdateFormats(const AFileName: TFileName): TJclUpdateArchiveClassArray;
+var
+  ArchiveClassArray: TJclCompressionArchiveClassArray absolute Result;
+begin
   // Try to find archive type in cache
-  if ArchiveFormatCache.ArchiveName = AFileName then
-    Exit(ArchiveFormatCache.ArchiveClassArray)
+  if UpdateFormatsCache.ArchiveName = AFileName then
+    Exit(TJclUpdateArchiveClassArray(DecompressFormatsCache.ArchiveClassArray))
   else begin
-    ArchiveFormatCache.ArchiveName:= AFileName;
-    SetLength(ArchiveFormatCache.ArchiveClassArray, 0);
+    UpdateFormatsCache.ArchiveName:= AFileName;
+    SetLength(UpdateFormatsCache.ArchiveClassArray, 0);
+  end;
+
+  Result:= GetArchiveFormats.FindUpdateFormats(AFileName);
+
+  FindArchiveFormats(AFileName, atUpdateArchive, ArchiveClassArray);
+
+  // Save archive type in cache
+  UpdateFormatsCache.ArchiveClassArray:= ArchiveClassArray;
+end;
+
+function FindCompressFormats(const AFileName: TFileName): TJclCompressArchiveClassArray;
+var
+  ArchiveClassArray: TJclCompressionArchiveClassArray absolute Result;
+begin
+  // Try to find archive type in cache
+  if CompressFormatsCache.ArchiveName = AFileName then
+    Exit(TJclCompressArchiveClassArray(DecompressFormatsCache.ArchiveClassArray))
+  else begin
+    CompressFormatsCache.ArchiveName:= AFileName;
+    SetLength(CompressFormatsCache.ArchiveClassArray, 0);
+  end;
+
+  Result:= GetArchiveFormats.FindCompressFormats(AFileName);
+
+  FindArchiveFormats(AFileName, atCompressArchive, ArchiveClassArray);
+
+  // Save archive type in cache
+  CompressFormatsCache.ArchiveClassArray:= ArchiveClassArray;
+end;
+
+function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
+var
+  ArchiveClassArray: TJclCompressionArchiveClassArray absolute Result;
+begin
+  // Try to find archive type in cache
+  if DecompressFormatsCache.ArchiveName = AFileName then
+    Exit(TJclDecompressArchiveClassArray(DecompressFormatsCache.ArchiveClassArray))
+  else begin
+    DecompressFormatsCache.ArchiveName:= AFileName;
+    SetLength(DecompressFormatsCache.ArchiveClassArray, 0);
   end;
 
   Result:= GetArchiveFormats.FindDecompressFormats(AFileName);
 
-  if Length(ArchiveFormatsX) = 0 then LoadArchiveFormats(ArchiveFormatsX);
+  FindArchiveFormats(AFileName, atDecompressArchive, ArchiveClassArray);
 
-  AFile:= FileOpenUTF8(AFileName, fmOpenRead or fmShareDenyNone);
-  if AFile = feInvalidHandle then Exit(nil);
-  try
-   if FileRead(AFile, Buffer, SizeOf(Buffer)) = 0 then
-     Exit(nil);
-  finally
-    FileClose(AFile);
-  end;
-
-  for Index := Low(ArchiveFormatsX) to High(ArchiveFormatsX) do
-  begin
-    ArchiveFormat:= ArchiveFormatsX[Index];
-
-    // Skip container types
-    if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
-    if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
-    if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
-
-    if Length(ArchiveFormat.StartSignature) = 0 then Continue;
-    for Idx:= 0 to Pred(BufferSize) - Length(ArchiveFormat.StartSignature) do
-    begin
-      if CompareMem(@Buffer[Idx], @ArchiveFormat.StartSignature[0], Length(ArchiveFormat.StartSignature)) then
-      begin
-        ArchiveClass:= FindDecompressFormat(ArchiveFormat.ClassID);
-        if Assigned(ArchiveClass) and not Contains(Result, ArchiveClass) then
-        begin
-          SetLength(Result, Length(Result) + 1);
-          Result[High(Result)] := ArchiveClass;
-        end;
-        Break;
-      end;
-    end;
-  end;
   // Save archive type in cache
-  ArchiveFormatCache.ArchiveClassArray:= Result;
+  DecompressFormatsCache.ArchiveClassArray:= ArchiveClassArray;
 end;
 
 { TJclSevenzipDecompressArchiveHelper }

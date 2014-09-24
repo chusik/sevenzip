@@ -216,7 +216,7 @@ var
   AFormats: TJclUpdateArchiveClassArray;
 begin
   FileNameUTF8 := UTF8Encode(WideString(PackedFile));
-  AFormats := GetArchiveFormats.FindUpdateFormats(FileNameUTF8);
+  AFormats := FindUpdateFormats(FileNameUTF8);
   for I := Low(AFormats) to High(AFormats) do
   begin
     Archive := AFormats[I].Create(FileNameUTF8, 0, False);
@@ -226,7 +226,12 @@ begin
       Archive.OnProgress:= AProgress.JclCompressionProgress;
 
       if (GetFileAttributesW(PackedFile) <> INVALID_FILE_ATTRIBUTES) then
-        Archive.ListFiles;
+      try
+      Archive.ListFiles;
+
+      except
+        Continue;
+      end;
 
       if Assigned(SubPath) then
       begin
