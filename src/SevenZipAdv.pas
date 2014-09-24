@@ -30,7 +30,7 @@ type
     procedure ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
   end;
 
-function FindDecompressFormat(const AFileName: TFileName; TestArchiveSignature: Boolean): TJclDecompressArchiveClass;
+function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
 
 implementation
 
@@ -126,65 +126,77 @@ begin
   SetLength(ArchiveFormats, Idx);
 end;
 
-function TestSignature(Buffer: PByte; ArchiveFormat: TArchiveFormat): Boolean;
+function Contains(const ArrayToSearch: TJclDecompressArchiveClassArray; const ArchiveClass: TJclDecompressArchiveClass): Boolean;
 var
-  I: Integer;
+  Index: Integer;
 begin
-  for I:= 0 to Pred(MaxSmallInt) - Length(ArchiveFormat.StartSignature) do
-  begin
-    if CompareMem(Buffer + I, @ArchiveFormat.StartSignature[0], Length(ArchiveFormat.StartSignature)) then
+  for Index := Low(ArrayToSearch) to High(ArrayToSearch) do
+    if ArrayToSearch[Index] = ArchiveClass then
       Exit(True);
-  end;
-  Result:= False;
+  Result := False;
 end;
 
-function FindDecompressFormat(const AFileName: TFileName;
-  TestArchiveSignature: Boolean): TJclDecompressArchiveClass;
+function FindDecompressFormat(const ClassID: TGUID): TJclDecompressArchiveClass;
+var
+  Index: Integer;
+  ArchiveClass: TJclSevenzipCompressArchiveClass;
+begin
+  for Index:= 0 to GetArchiveFormats.DecompressFormatCount - 1 do
+  begin
+    ArchiveClass:= TJclSevenzipCompressArchiveClass(GetArchiveFormats.DecompressFormats[Index]);
+    if GUIDEquals(ClassID, ArchiveClass.ArchiveCLSID) then
+      Exit(GetArchiveFormats.DecompressFormats[Index]);
+  end;
+  Result:= nil;
+end;
+
+function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
+const
+  BufferSize = 524288;
 var
   AFile: THandle;
   I, Idx, Index: Integer;
   ArchiveFormat: TArchiveFormat;
-  Buffer: array[0..Pred(MaxSmallInt)] of Byte;
-  ArchiveClass: TJclSevenzipCompressArchiveClass;
+  ArchiveClass: TJclDecompressArchiveClass;
+  Buffer: array[0..Pred(BufferSize)] of Byte;
 begin
-  if TestArchiveSignature then
+  Result:= GetArchiveFormats.FindDecompressFormats(AFileName);
+
+  if Length(ArchiveFormatsX) = 0 then LoadArchiveFormats(ArchiveFormatsX);
+
+  AFile:= FileOpenUTF8(AFileName, fmOpenRead or fmShareDenyNone);
+  if AFile = feInvalidHandle then Exit(nil);
+  try
+   if FileRead(AFile, Buffer, SizeOf(Buffer)) = 0 then
+     Exit(nil);
+  finally
+    FileClose(AFile);
+  end;
+
+  for Index := Low(ArchiveFormatsX) to High(ArchiveFormatsX) do
   begin
-    if Length(ArchiveFormatsX) = 0 then LoadArchiveFormats(ArchiveFormatsX);
+    ArchiveFormat:= ArchiveFormatsX[Index];
 
-    AFile:= FileOpenUTF8(AFileName, fmOpenRead or fmShareDenyNone);
-    if AFile = feInvalidHandle then Exit(nil);
-    try
-     if FileRead(AFile, Buffer, SizeOf(Buffer)) = 0 then
-       Exit(nil);
-    finally
-      FileClose(AFile);
-    end;
+    // Skip container types
+    if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
+    if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
+    if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
 
-    for Index := Low(ArchiveFormatsX) to High(ArchiveFormatsX) do
+    if Length(ArchiveFormat.StartSignature) = 0 then Continue;
+    for Idx:= 0 to Pred(BufferSize) - Length(ArchiveFormat.StartSignature) do
     begin
-      ArchiveFormat:= ArchiveFormatsX[Index];
-
-      // Skip containers
-      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
-      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
-      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
-
-      if Length(ArchiveFormat.StartSignature) = 0 then Continue;
-      for Idx:= 0 to Pred(MaxSmallInt) - Length(ArchiveFormat.StartSignature) do
+      if CompareMem(@Buffer[Idx], @ArchiveFormat.StartSignature[0], Length(ArchiveFormat.StartSignature)) then
       begin
-        if CompareMem(@Buffer[Idx], @ArchiveFormat.StartSignature[0], Length(ArchiveFormat.StartSignature)) then
+        ArchiveClass:= FindDecompressFormat(ArchiveFormat.ClassID);
+        if Assigned(ArchiveClass) and not Contains(Result, ArchiveClass) then
         begin
-          for I:= 0 to GetArchiveFormats.DecompressFormatCount - 1 do
-          begin
-            ArchiveClass:= TJclSevenzipCompressArchiveClass(GetArchiveFormats.DecompressFormats[I]);
-            if GUIDEquals(ArchiveFormat.ClassID, ArchiveClass.ArchiveCLSID) then
-              Exit(GetArchiveFormats.DecompressFormats[I]);
-          end;
+          SetLength(Result, Length(Result) + 1);
+          Result[High(Result)] := ArchiveClass;
         end;
+        Break;
       end;
     end;
   end;
-  Result:= GetArchiveFormats.FindDecompressFormat(AFileName)
 end;
 
 { TJclSevenzipDecompressArchiveHelper }

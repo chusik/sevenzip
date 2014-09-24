@@ -87,7 +87,7 @@ begin
   begin
     Index:= 0;
     FileNameUTF8 := UTF8Encode(WideString(ArchiveData.ArcName));
-    AFormats := GetArchiveFormats.FindDecompressFormats(FileNameUTF8);
+    AFormats := FindDecompressFormats(FileNameUTF8);
     for I := Low(AFormats) to High(AFormats) do
     begin
       Archive := AFormats[I].Create(FileNameUTF8, 0, False);
@@ -100,16 +100,19 @@ begin
 
         Count:= Archive.ItemCount;
 
+        ArchiveData.OpenResult:= E_SUCCESS;
+
         Exit(TArcHandle(Handle));
       except
         on E: Exception do
         begin
           ArchiveData.OpenResult:= GetArchiveError(E);
-          Archive.Free;
-          Free;
+          FreeAndNil(Archive);
+          Continue;
         end;
       end;
     end;
+    if (Archive = nil) then Free;
   end;
   Result:= 0;
 end;
@@ -322,7 +325,7 @@ end;
 
 function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
 begin
-  Result:= FindDecompressFormat(UTF8Encode(WideString(FileName)), True) <> nil;
+  Result:= FindDecompressFormats(UTF8Encode(WideString(FileName))) <> nil;
 end;
 
 { TSevenZipUpdate }
