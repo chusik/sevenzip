@@ -5535,7 +5535,7 @@ begin
             FreeAndNil(SrcStream);
           if OwnsDestStream then
             FreeAndNil(DestStream);
-          Handled := RenameFileUTF8(SrcFileName, DestFileName);
+          Handled := MoveFileExW(PWideChar(UTF8Decode(SrcFileName)), PWideChar(UTF8Decode(DestFileName)), MOVEFILE_REPLACE_EXISTING);
         end
         else
         if (SrcFileName = '') and (DestFileName = '') and Assigned(SrcStream) and Assigned(DestStream) then
