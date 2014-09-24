@@ -24,7 +24,7 @@ function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
 implementation
 
 uses
-  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip;
+  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip, SevenZipAdv;
 
 type
 
@@ -48,12 +48,6 @@ type
     procedure JclCompressionProgress(Sender: TObject; const Value, MaxValue: Int64); override;
     function JclCompressionExtract(Sender: TObject; AIndex: Integer;
       var AFileName: TFileName; var Stream: TStream; var AOwnsStream: Boolean): Boolean;
-  end;
-
-  { TJclSevenzipDecompressArchiveHelper }
-
-  TJclSevenzipDecompressArchiveHelper = class helper for TJclSevenzipDecompressArchive
-    procedure ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
   end;
 
 threadvar
@@ -327,34 +321,8 @@ end;
 end;
 
 function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
-var
-  AFormats: TJclDecompressArchiveClassArray;
 begin
-  AFormats := GetArchiveFormats.FindDecompressFormats(FileName);
-  Result:= Length(AFormats) > 0;
-end;
-
-{ TJclSevenzipDecompressArchiveHelper }
-
-procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
-var
-  AExtractCallback: IArchiveExtractCallback;
-begin
-  CheckNotDecompressing;
-
-  FDecompressing := True;
-  FDestinationDir := ADestinationDir;
-  AExtractCallback := TJclSevenzipExtractCallback.Create(Self);
-  try
-    OpenArchive;
-
-    SevenzipCheck(InArchive.Extract(@Index, 1, Cardinal(Verify), AExtractCallback));
-    CheckOperationSuccess;
-  finally
-    FDestinationDir := '';
-    FDecompressing := False;
-    AExtractCallback := nil;
-  end;
+  Result:= FindDecompressFormat(UTF8Encode(WideString(FileName)), True) <> nil;
 end;
 
 { TSevenZipUpdate }
