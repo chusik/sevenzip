@@ -186,7 +186,7 @@ begin
   Result:= nil;
 end;
 
-procedure FindArchiveFormats(const AFileName: TFileName; ArchiveType: TJclArchiveType; out Result: TJclCompressionArchiveClassArray);
+procedure FindArchiveFormats(const AFileName: TFileName; ArchiveType: TJclArchiveType; var Result: TJclCompressionArchiveClassArray);
 const
   BufferSize = 524288;
 var
