@@ -64,7 +64,7 @@ begin
   else if E is EWriteError then
     Result:= E_EWRITE
   else
-    Result:= MaxInt;
+    Result:= E_UNKNOWN_FORMAT;
 end;
 
 function WinToDosTime(const WinTime: TFILETIME; var DosTime: Cardinal): LongBool;
