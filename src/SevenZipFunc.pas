@@ -227,8 +227,7 @@ begin
 
       if (GetFileAttributesW(PackedFile) <> INVALID_FILE_ATTRIBUTES) then
       try
-      Archive.ListFiles;
-
+        Archive.ListFiles;
       except
         Continue;
       end;
@@ -270,61 +269,57 @@ end;
 function DeleteFilesW(PackedFile, DeleteList: PWideChar): Integer; stdcall;
 var
   I: Integer;
+  FileList : PWideChar;
+  FileName : WideString;
+  FileNameUTF8 : UTF8String;
   Archive: TJclUpdateArchive;
   AProgress: TSevenZipUpdate;
   AFormats: TJclUpdateArchiveClassArray;
-var
-
- pFileName : PWideChar;
- FileName : WideString;
- FileNameUTF8 : UTF8String;
-
 begin
+  FileNameUTF8 := UTF8Encode(WideString(PackedFile));
+  AFormats := FindUpdateFormats(FileNameUTF8);
+  for I := Low(AFormats) to High(AFormats) do
+  begin
+    Archive := AFormats[I].Create(FileNameUTF8, 0, False);
+    try
+      AProgress:= TSevenZipUpdate.Create;
+      Archive.OnPassword:= AProgress.JclCompressionPassword;
+      Archive.OnProgress:= AProgress.JclCompressionProgress;
 
-    AFormats := GetArchiveFormats.FindUpdateFormats(PackedFile);
-
-    for I := Low(AFormats) to High(AFormats) do
-    begin
-      Archive := AFormats[I].Create(PackedFile, 0, False);
       try
-        AProgress:= TSevenZipUpdate.Create;
-        Archive.OnPassword:= AProgress.JclCompressionPassword;
-        Archive.OnProgress:= AProgress.JclCompressionProgress;
-
         Archive.ListFiles;
-
-// Parse file list.
-pFileName := DeleteList;
-while pFileName^ <> #0 do
-begin
-  FileName := pFileName;    // Convert PWideChar to WideString (up to first #0).
-
-  // If ends with '.../*.*' or '.../' then delete directory.
- // if StrEndsWith(FileNameUTF8, PathDelim + '*.*') or
- //    StrEndsWith(FileNameUTF8, PathDelim)
- // then
- //   (Archive as TJclUpdateArchive).RemoveItem(ExtractFilePath(FileName));
- // else
-    (Archive as TJclUpdateArchive).RemoveItem(FileName);
-
-  pFileName := pFileName + Length(FileName) + 1; // move after filename and ending #0
-  if pFileName^ = #0 then
-    Break;  // end of list
-end;
-try
-Archive.Compress;
-except
-  on E: Exception do
-    FileNameUTF8:= E.Message;
-end;
-
-        Exit(E_SUCCESS);
-      finally
-        Archive.Free;
-        AProgress.Free;
+      except
+        Continue;
       end;
-    end;
 
+      // Parse file list.
+      FileList := DeleteList;
+      while FileList^ <> #0 do
+      begin
+        FileName := FileList;  // Convert PWideChar to WideString (up to first #0)
+
+        // If ends with '.../*.*' or '.../' then delete directory.
+        if ((FileList + Length(FileName) - 1)^ = '*') then
+          TJclSevenzipUpdateArchive(Archive).DeleteItem(WideExtractFilePath(FileName))
+        else
+          TJclSevenzipUpdateArchive(Archive).DeleteItem(FileName);
+
+        FileList := FileList + Length(FileName) + 1; // move after filename and ending #0
+        if FileList^ = #0 then
+          Break;  // end of list
+      end;
+      try
+        Archive.Compress;
+      except
+        on E: Exception do
+          Exit(GetArchiveError(E));
+      end;
+      Exit(E_SUCCESS);
+    finally
+      Archive.Free;
+      AProgress.Free;
+    end;
+  end;
   Result:= E_NOT_SUPPORTED;
 end;
 

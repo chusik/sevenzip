@@ -25,6 +25,12 @@ type
      StartSignature: TBytes;
    end;
 
+   { TJclSevenzipUpdateArchiveHelper }
+
+   TJclSevenzipUpdateArchiveHelper = class helper for TJclSevenzipUpdateArchive
+     procedure DeleteItem(const PackedName: WideString); overload;
+   end;
+
   { TJclSevenzipDecompressArchiveHelper }
 
   TJclSevenzipDecompressArchiveHelper = class helper for TJclSevenzipDecompressArchive
@@ -35,10 +41,12 @@ function FindUpdateFormats(const AFileName: TFileName): TJclUpdateArchiveClassAr
 function FindCompressFormats(const AFileName: TFileName): TJclCompressArchiveClassArray;
 function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
 
+function WideExtractFilePath(const FileName: WideString): WideString;
+
 implementation
 
 uses
-  ActiveX, Windows, JclSysUtils, LazFileUtils;
+  ActiveX, Windows, JclSysUtils, JclWideStrings, LazFileUtils;
 
 type
   TArchiveFormats = array of TArchiveFormat;
@@ -296,6 +304,49 @@ begin
   DecompressFormatsCache.ArchiveClassArray:= ArchiveClassArray;
 end;
 
+{ TJclSevenzipUpdateArchiveHelper }
+
+procedure TJclSevenzipUpdateArchiveHelper.DeleteItem(const PackedName: WideString);
+var
+  IsDirectory: Boolean;
+  DirectoryName: WideString;
+  AItem: TJclCompressionItem;
+  Index, PackedNamesIndex: Integer;
+begin
+  IsDirectory := False;
+  for Index := 0 to ItemCount - 1 do
+  begin
+    AItem := Items[Index];
+    if WideSameText(AItem.PackedName, PackedName) then
+    begin
+      DirectoryName := AItem.PackedName;
+      if (AItem.Attributes and faDirectory) <> 0 then
+        IsDirectory := True;
+      FItems.Delete(Index);
+      PackedNamesIndex := -1;
+      if (FPackedNames <> nil) and FPackedNames.Find(PackedName, PackedNamesIndex) then
+        FPackedNames.Delete(PackedNamesIndex);
+      Break;
+    end;
+  end;
+
+  if IsDirectory then
+  begin
+    if PackedName[Length(PackedName)] = PathDelim then
+      DirectoryName := PackedName
+    else
+      DirectoryName := PackedName + PathDelim;
+
+    for Index := ItemCount - 1 downto 0 do
+      if (StrLICompW(PWideChar(DirectoryName), PWideChar(Items[Index].PackedName), Length(DirectoryName)) = 0) then
+      begin
+        if (FPackedNames <> nil) and FPackedNames.Find(Items[Index].PackedName, PackedNamesIndex) then
+          FPackedNames.Delete(PackedNamesIndex);
+        FItems.Delete(Index);
+      end;
+  end;
+end;
+
 { TJclSevenzipDecompressArchiveHelper }
 
 procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
@@ -317,6 +368,21 @@ begin
     FDecompressing := False;
     AExtractCallback := nil;
   end;
+end;
+
+function WideExtractFilePath(const FileName: WideString): WideString;
+var
+  I: LongInt;
+  EndSep: set of AnsiChar;
+begin
+  I:= Length(FileName);
+  EndSep:= AllowDirectorySeparators + AllowDriveSeparators;
+  while (I > 0) and not (FileName[I] in EndSep) do
+    Dec(I);
+  if I > 0 then
+    Result:= Copy(FileName, 1, I)
+  else
+    Result:= '';
 end;
 
 end.
