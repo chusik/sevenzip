@@ -296,6 +296,9 @@ begin
     SetLength(DecompressFormatsCache.ArchiveClassArray, 0);
   end;
 
+  // Don't process PE files as archives
+  GetArchiveFormats.UnregisterFormat(TJclPeDecompressArchive);
+
   Result:= GetArchiveFormats.FindDecompressFormats(AFileName);
 
   FindArchiveFormats(AFileName, atDecompressArchive, ArchiveClassArray);
