@@ -20,6 +20,7 @@ procedure SetProcessDataProcW(hArcData : TArcHandle; pProcessDataProc : TProcess
 function PackFilesW(PackedFile: PWideChar; SubPath: PWideChar; SrcPath: PWideChar; AddList: PWideChar; Flags: Integer): Integer; stdcall;
 function DeleteFilesW(PackedFile, DeleteList: PWideChar): Integer; stdcall;
 function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
+procedure PackSetDefaultParams(dps: PPackDefaultParamStruct); stdcall;
 
 implementation
 
@@ -334,6 +335,14 @@ end;
 function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
 begin
   Result:= FindDecompressFormats(UTF8Encode(WideString(FileName))) <> nil;
+end;
+
+procedure PackSetDefaultParams(dps: PPackDefaultParamStruct); stdcall;
+begin
+  // Process Xz files as archives
+  GetArchiveFormats.RegisterFormat(TJclXzDecompressArchive);
+  // Don't process PE files as archives
+  GetArchiveFormats.UnregisterFormat(TJclPeDecompressArchive);
 end;
 
 { TSevenZipUpdate }

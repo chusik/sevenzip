@@ -296,11 +296,6 @@ begin
     SetLength(DecompressFormatsCache.ArchiveClassArray, 0);
   end;
 
-  // Process Xz files as archives
-  GetArchiveFormats.RegisterFormat(TJclXzDecompressArchive);
-  // Don't process PE files as archives
-  GetArchiveFormats.UnregisterFormat(TJclPeDecompressArchive);
-
   Result:= GetArchiveFormats.FindDecompressFormats(AFileName);
 
   FindArchiveFormats(AFileName, atDecompressArchive, ArchiveClassArray);

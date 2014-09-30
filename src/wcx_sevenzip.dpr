@@ -59,6 +59,7 @@ exports
   DeleteFilesW,
   GetPackerCaps,
   GetBackgroundFlags,
+  PackSetDefaultParams,
   CanYouHandleThisFileW
   ;
 
