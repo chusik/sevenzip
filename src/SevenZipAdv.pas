@@ -395,7 +395,7 @@ begin
   if Result then
   begin
     ModuleName[0]:= #0;
-    Result:= GetModuleFileName(THandle(lpBuffer.AllocationBase), ModuleName, MAX_PATH) > 0;
+    Result:= GetModuleFileNameW(THandle(lpBuffer.AllocationBase), ModuleName, MAX_PATH) > 0;
     if Result then
     begin
       if GetShortPathNameW(ModuleName, ShortName, MAX_PATH) > 0 then
