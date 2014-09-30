@@ -24,7 +24,7 @@ function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
 implementation
 
 uses
-  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip, SevenZipAdv;
+  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip, SevenZipAdv, LazFileUtils;
 
 type
 
@@ -42,6 +42,7 @@ type
     Count: LongWord;
     FileName: UTF8String;
     Directory: UTF8String;
+    ArchiveName: UTF8String;
     Archive: TJclDecompressArchive;
     ProcessDataProc: TProcessDataProcW;
   public
@@ -79,18 +80,17 @@ function OpenArchiveW(var ArchiveData : tOpenArchiveDataW) : TArcHandle; stdcall
 var
   I: Integer;
   Handle: TSevenZipHandle;
-  FileNameUTF8: UTF8String;
   AFormats: TJclDecompressArchiveClassArray;
 begin
   Handle:= TSevenZipHandle.Create;
   with Handle do
   begin
     Index:= 0;
-    FileNameUTF8 := UTF8Encode(WideString(ArchiveData.ArcName));
-    AFormats := FindDecompressFormats(FileNameUTF8);
+    ArchiveName := UTF8Encode(WideString(ArchiveData.ArcName));
+    AFormats := FindDecompressFormats(ArchiveName);
     for I := Low(AFormats) to High(AFormats) do
     begin
-      Archive := AFormats[I].Create(FileNameUTF8, 0, False);
+      Archive := AFormats[I].Create(ArchiveName, 0, False);
       try
         Archive.OnPassword:= JclCompressionPassword;
         Archive.OnProgress := JclCompressionProgress;
@@ -133,6 +133,14 @@ begin
     HeaderData.PackSizeHigh:= Int64Rec(Item.PackedSize).Hi;
     HeaderData.FileAttr:= Item.Attributes;
     WinToDosTime(Item.LastWriteTime, LongWord(HeaderData.FileTime));
+    // Special case for Xz archives
+    if (HeaderData.FileName[0] = #0) and (Archive is TJclXzDecompressArchive) then
+    begin
+      if LowerCase(ExtractFileExt(ArchiveName)) <> '.txz' then
+        HeaderData.FileName:= ExtractFileNameOnly(ArchiveName)
+      else
+        HeaderData.FileName:= ExtractFileNameOnly(ArchiveName) + '.tar';
+    end;
   end;
   Result:= E_SUCCESS;
 end;
