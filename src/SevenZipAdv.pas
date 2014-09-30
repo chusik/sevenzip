@@ -391,7 +391,7 @@ var
   lpBuffer: TMemoryBasicInformation;
   ModuleName, ShortName: array[0..MAX_PATH] of WideChar;
 begin
-  Result:= VirtualQuery(@lpBuffer, @lpBuffer, SizeOf(lpBuffer)) = SizeOf(lpBuffer);
+  Result:= VirtualQuery(@GetModulePath, @lpBuffer, SizeOf(lpBuffer)) = SizeOf(lpBuffer);
   if Result then
   begin
     ModuleName[0]:= #0;
