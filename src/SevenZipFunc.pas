@@ -338,7 +338,14 @@ begin
 end;
 
 procedure PackSetDefaultParams(dps: PPackDefaultParamStruct); stdcall;
+var
+  ModulePath: AnsiString;
 begin
+  // Load library from plugin path
+  if GetModulePath(ModulePath) and FileExists(ModulePath + SevenzipDefaultLibraryName) then
+  begin
+    SevenzipLibraryName:= ModulePath + SevenzipDefaultLibraryName;
+  end;
   // Process Xz files as archives
   GetArchiveFormats.RegisterFormat(TJclXzDecompressArchive);
   // Don't process PE files as archives

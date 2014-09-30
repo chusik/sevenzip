@@ -42,6 +42,7 @@ function FindCompressFormats(const AFileName: TFileName): TJclCompressArchiveCla
 function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
 
 function WideExtractFilePath(const FileName: WideString): WideString;
+function GetModulePath(out ModulePath: AnsiString): Boolean;
 
 implementation
 
@@ -383,6 +384,26 @@ begin
     Result:= Copy(FileName, 1, I)
   else
     Result:= '';
+end;
+
+function GetModulePath(out ModulePath: AnsiString): Boolean;
+var
+  lpBuffer: TMemoryBasicInformation;
+  ModuleName, ShortName: array[0..MAX_PATH] of WideChar;
+begin
+  Result:= VirtualQuery(@lpBuffer, @lpBuffer, SizeOf(lpBuffer)) = SizeOf(lpBuffer);
+  if Result then
+  begin
+    ModuleName[0]:= #0;
+    Result:= GetModuleFileName(THandle(lpBuffer.AllocationBase), ModuleName, MAX_PATH) > 0;
+    if Result then
+    begin
+      if GetShortPathNameW(ModuleName, ShortName, MAX_PATH) > 0 then
+        ModulePath:= ExtractFilePath(WideString(ShortName))
+      else
+        ModulePath:= ExtractFilePath(WideString(ModuleName));
+    end;
+  end;
 end;
 
 end.
