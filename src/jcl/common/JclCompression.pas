@@ -6410,11 +6410,6 @@ function TJclSevenzipUpdateCallback.CryptoGetTextPassword2(
 begin
   if Assigned(PasswordIsDefined) then
   begin
-    if Length(FArchive.FPassword) = 0 then
-    begin
-      if Assigned(FArchive.OnPassword) then
-        FArchive.OnPassword(FArchive, FArchive.FPassword);
-    end;
     if FArchive.Password <> '' then
       PasswordIsDefined^ := Integer($FFFFFFFF)
     else
