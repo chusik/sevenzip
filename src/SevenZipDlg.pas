@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, Windows;
 
-function ShowPasswordQuery(ShowEncrypt: Boolean; out Password: WideString): Boolean;
+function ShowPasswordQuery(var Encrypt: Boolean; var Password: WideString): Boolean;
 
 implementation
 
@@ -21,7 +21,7 @@ const
 type
   PPasswordData = ^TPasswordData;
   TPasswordData = record
-    ShowEncrypt: Boolean;
+    EncryptHeader: Boolean;
     Password: array[0..MAX_PATH] of WideChar;
   end;
 
@@ -36,8 +36,9 @@ begin
     begin
       PasswordData:= PPasswordData(lParam);
       SetWindowLongPtr(hwndDlg, GWLP_USERDATA, LONG_PTR(lParam));
+      SetDlgItemTextW(hwndDlg, IDC_PASSWORD, PasswordData^.Password);
       SendDlgItemMessage(hwndDlg, IDC_PASSWORD, EM_SETLIMITTEXT, MAX_PATH, 0);
-      EnableWindow(GetDlgItem(hwndDlg, IDC_ENCRYPT_HEADER), PasswordData^.ShowEncrypt);
+      EnableWindow(GetDlgItem(hwndDlg, IDC_ENCRYPT_HEADER), PasswordData^.EncryptHeader);
       Exit(1);
     end;
     WM_COMMAND:
@@ -45,6 +46,7 @@ begin
       case LOWORD(wParam) of
        IDOK:
        begin
+         PasswordData^.EncryptHeader:= IsDlgButtonChecked(hwndDlg, IDC_ENCRYPT_HEADER) <> 0;
          GetDlgItemTextW(hwndDlg, IDC_PASSWORD, PasswordData^.Password, MAX_PATH);
    	 EndDialog(hwndDlg, IDOK);
        end;
@@ -64,15 +66,17 @@ begin
   Result:= 0;
 end;
 
-function ShowPasswordQuery(ShowEncrypt: Boolean; out Password: WideString): Boolean;
+function ShowPasswordQuery(var Encrypt: Boolean; var Password: WideString): Boolean;
 var
   PasswordData: TPasswordData;
 begin
-  PasswordData.ShowEncrypt:= ShowEncrypt;
+  PasswordData.Password:= Password;
+  PasswordData.EncryptHeader:= Encrypt;
   Result:= (DialogBoxParam(hInstance, 'DIALOG_PWD', 0, @PasswordDialog, LPARAM(@PasswordData)) = IDOK);
   if Result then
   begin
     Password:= PasswordData.Password;
+    Encrypt:= PasswordData.EncryptHeader;
   end;
 end;
 

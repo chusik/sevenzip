@@ -215,6 +215,8 @@ function PackFilesW(PackedFile: PWideChar; SubPath: PWideChar;
   SrcPath: PWideChar; AddList: PWideChar; Flags: Integer): Integer; stdcall;
 var
   I: Integer;
+  Encrypt: Boolean;
+  Password: WideString;
   FilePath: WideString;
   FileName: WideString;
   FileNameUTF8: UTF8String;
@@ -231,6 +233,16 @@ begin
       AProgress:= TSevenZipUpdate.Create;
       Archive.OnPassword:= AProgress.JclCompressionPassword;
       Archive.OnProgress:= AProgress.JclCompressionProgress;
+
+      if (Flags and PK_PACK_ENCRYPT) <> 0 then
+      begin
+        Encrypt:= Archive is TJcl7zUpdateArchive;
+        if ShowPasswordQuery(Encrypt, Password) then
+        begin
+          if Encrypt then TJcl7zUpdateArchive(Archive).SetEncryptHeader(True);
+          Archive.Password:= Password;
+        end;
+      end;
 
       if (GetFileAttributesW(PackedFile) <> INVALID_FILE_ATTRIBUTES) then
       try
@@ -354,8 +366,10 @@ end;
 
 procedure TSevenZipUpdate.JclCompressionPassword(Sender: TObject;
   var Password: WideString);
+var
+  Encrypt: Boolean = False;
 begin
-  ShowPasswordQuery(False, Password);
+  ShowPasswordQuery(Encrypt, Password);
 end;
 
 procedure TSevenZipUpdate.JclCompressionProgress(Sender: TObject; const Value,
