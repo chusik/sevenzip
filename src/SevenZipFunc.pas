@@ -25,7 +25,8 @@ procedure PackSetDefaultParams(dps: PPackDefaultParamStruct); stdcall;
 implementation
 
 uses
-  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip, SevenZipAdv, LazFileUtils;
+  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip, SevenZipAdv,
+  SevenZipDlg, LazFileUtils;
 
 type
 
@@ -354,7 +355,7 @@ end;
 procedure TSevenZipUpdate.JclCompressionPassword(Sender: TObject;
   var Password: WideString);
 begin
-  Password:= '123';
+  ShowPasswordQuery(False, Password);
 end;
 
 procedure TSevenZipUpdate.JclCompressionProgress(Sender: TObject; const Value,

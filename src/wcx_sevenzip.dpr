@@ -2,7 +2,7 @@ library wcx_sevenzip;
 
 uses
   Classes,
-  SevenZipFunc,
+  SevenZipFunc, SevenZipDlg,
   WcxPlugin, SevenZipAdv;
 
 function OpenArchive(var ArchiveData : tOpenArchiveData) : TArcHandle; stdcall;
