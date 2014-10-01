@@ -239,8 +239,8 @@ begin
         Encrypt:= Archive is TJcl7zUpdateArchive;
         if ShowPasswordQuery(Encrypt, Password) then
         begin
-          if Encrypt then TJcl7zUpdateArchive(Archive).SetEncryptHeader(True);
           Archive.Password:= Password;
+          if Encrypt then TJcl7zUpdateArchive(Archive).SetEncryptHeader(True);
         end;
       end;
 
