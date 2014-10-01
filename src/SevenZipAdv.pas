@@ -41,6 +41,7 @@ function FindUpdateFormats(const AFileName: TFileName): TJclUpdateArchiveClassAr
 function FindCompressFormats(const AFileName: TFileName): TJclCompressArchiveClassArray;
 function FindDecompressFormats(const AFileName: TFileName): TJclDecompressArchiveClassArray;
 
+function GetNestedArchiveName(const ArchiveName: UTF8String; Item: TJclCompressionItem): WideString;
 function WideExtractFilePath(const FileName: WideString): WideString;
 function GetModulePath(out ModulePath: AnsiString): Boolean;
 
@@ -368,6 +369,18 @@ begin
     FDestinationDir := '';
     FDecompressing := False;
     AExtractCallback := nil;
+  end;
+end;
+
+function GetNestedArchiveName(const ArchiveName: UTF8String; Item: TJclCompressionItem): WideString;
+var
+  Extension: UTF8String;
+begin
+  Result:= Item.NestedArchiveName;
+  Extension:= LowerCase(ExtractFileExt(ArchiveName));
+  if (Extension = '.tbz') or (Extension = '.tgz') or (Extension = '.txz') then
+  begin
+    Result:= Result + '.tar';
   end;
 end;
 

@@ -134,13 +134,10 @@ begin
     HeaderData.PackSizeHigh:= Int64Rec(Item.PackedSize).Hi;
     HeaderData.FileAttr:= Item.Attributes;
     WinToDosTime(Item.LastWriteTime, LongWord(HeaderData.FileTime));
-    // Special case for Xz archives
-    if (HeaderData.FileName[0] = #0) and (Archive is TJclXzDecompressArchive) then
+    // Special case for BZip2, GZip and Xz archives
+    if (HeaderData.FileName[0] = #0) then
     begin
-      if LowerCase(ExtractFileExt(ArchiveName)) <> '.txz' then
-        HeaderData.FileName:= ExtractFileNameOnly(ArchiveName)
-      else
-        HeaderData.FileName:= ExtractFileNameOnly(ArchiveName) + '.tar';
+      HeaderData.FileName:= GetNestedArchiveName(ArchiveName, Item);
     end;
   end;
   Result:= E_SUCCESS;
