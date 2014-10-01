@@ -27,7 +27,6 @@ type
 
 function PasswordDialog(hwndDlg: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): INT_PTR; stdcall;
 var
-  PasswordChar: WideChar;
   PasswordData: PPasswordData;
 begin
   PasswordData:= PPasswordData(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
@@ -54,11 +53,8 @@ begin
          EndDialog(hwndDlg, IDCANCEL);
        IDC_SHOW_PASSWORD:
        begin
-         if IsDlgButtonChecked(hwndDlg, IDC_SHOW_PASSWORD) <> 0 then
-           PasswordChar:= #0
-         else
-           PasswordChar:= '*';
-      	SendDlgItemMessageW(hwndDlg, IDC_PASSWORD, EM_SETPASSWORDCHAR, Ord(PasswordChar), 0);
+         wParam:= (not IsDlgButtonChecked(hwndDlg, IDC_SHOW_PASSWORD) and $01) * $2A;
+      	 SendDlgItemMessageW(hwndDlg, IDC_PASSWORD, EM_SETPASSWORDCHAR, wParam, 0);
        end;
       end;
     end;
