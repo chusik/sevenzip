@@ -48,7 +48,7 @@ function GetModulePath(out ModulePath: AnsiString): Boolean;
 implementation
 
 uses
-  ActiveX, Windows, JclSysUtils, JclWideStrings, LazFileUtils;
+  CTypes, ActiveX, Windows, LazFileUtils;
 
 type
   TArchiveFormats = array of TArchiveFormat;
@@ -70,6 +70,8 @@ var
   UpdateFormatsCache: TArchiveFormatCache;
   CompressFormatsCache: TArchiveFormatCache;
   DecompressFormatsCache: TArchiveFormatCache;
+
+function _wcsnicmp(const s1, s2: pwidechar; count: csize_t): cint; cdecl; external 'msvcrt.dll';
 
 function ReadStringProp(FormatIndex: Cardinal; PropID: TPropID;
   out Value: UnicodeString): LongBool;
@@ -175,21 +177,21 @@ begin
       for Index:= 0 to GetArchiveFormats.UpdateFormatCount - 1 do
       begin
         UpdateClass:= TJclSevenzipUpdateArchiveClass(GetArchiveFormats.UpdateFormats[Index]);
-        if GUIDEquals(ClassID, UpdateClass.ArchiveCLSID) then
+        if IsEqualGUID(ClassID, UpdateClass.ArchiveCLSID) then
           Exit(GetArchiveFormats.UpdateFormats[Index]);
       end;
     atCompressArchive:
       for Index:= 0 to GetArchiveFormats.CompressFormatCount - 1 do
       begin
         CompressClass:= TJclSevenzipCompressArchiveClass(GetArchiveFormats.CompressFormats[Index]);
-        if GUIDEquals(ClassID, CompressClass.ArchiveCLSID) then
+        if IsEqualGUID(ClassID, CompressClass.ArchiveCLSID) then
           Exit(GetArchiveFormats.CompressFormats[Index]);
       end;
     atDecompressArchive:
       for Index:= 0 to GetArchiveFormats.DecompressFormatCount - 1 do
       begin
         DecompressClass:= TJclSevenzipDecompressArchiveClass(GetArchiveFormats.DecompressFormats[Index]);
-        if GUIDEquals(ClassID, DecompressClass.ArchiveCLSID) then
+        if IsEqualGUID(ClassID, DecompressClass.ArchiveCLSID) then
           Exit(GetArchiveFormats.DecompressFormats[Index]);
       end;
   end;
@@ -225,9 +227,9 @@ begin
         Continue;
 
       // Skip container types
-      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
-      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
-      if GUIDEquals(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
+      if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
+      if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
+      if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
 
       if Length(ArchiveFormat.StartSignature) = 0 then Continue;
       for Idx:= 0 to Pred(BufferSize) - Length(ArchiveFormat.StartSignature) do
@@ -340,7 +342,7 @@ begin
       DirectoryName := PackedName + PathDelim;
 
     for Index := ItemCount - 1 downto 0 do
-      if (StrLICompW(PWideChar(DirectoryName), PWideChar(Items[Index].PackedName), Length(DirectoryName)) = 0) then
+      if (_wcsnicmp(PWideChar(DirectoryName), PWideChar(Items[Index].PackedName), Length(DirectoryName)) = 0) then
       begin
         if (FPackedNames <> nil) and FPackedNames.Find(Items[Index].PackedName, PackedNamesIndex) then
           FPackedNames.Delete(PackedNamesIndex);
