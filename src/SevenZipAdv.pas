@@ -379,17 +379,13 @@ end;
 
 function WideExtractFilePath(const FileName: WideString): WideString;
 var
-  I: LongInt;
-  EndSep: set of AnsiChar;
+  Index: Integer;
 begin
-  I:= Length(FileName);
-  EndSep:= AllowDirectorySeparators + AllowDriveSeparators;
-  while (I > 0) and not (FileName[I] in EndSep) do
-    Dec(I);
-  if I > 0 then
-    Result:= Copy(FileName, 1, I)
-  else
-    Result:= '';
+  for Index:= Length(FileName) downto 1 do
+  case FileName[Index] of
+    PathDelim: Exit(Copy(FileName, 1, Index));
+  end;
+  Result:= EmptyWideStr;
 end;
 
 function GetModulePath(out ModulePath: AnsiString): Boolean;
