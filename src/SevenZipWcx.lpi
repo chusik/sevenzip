@@ -70,7 +70,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir);jcl\include;jcl\include\jedi"/>
-      <OtherUnitFiles Value="..\kol;jcl\common;jcl\windows;jcl\proptotypes"/>
+      <OtherUnitFiles Value="jcl\common;jcl\windows"/>
       <UnitOutputDirectory Value="..\lib"/>
     </SearchPaths>
     <Parsing>
