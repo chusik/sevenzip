@@ -25,7 +25,7 @@ procedure PackSetDefaultParams(dps: PPackDefaultParamStruct); stdcall;
 implementation
 
 uses
-  JwaWinBase, Windows, SysUtils, Classes, JclCompression, sevenzip, SevenZipAdv,
+  JwaWinBase, Windows, SysUtils, Classes, JclCompression, SevenZip, SevenZipAdv,
   SevenZipDlg, LazFileUtils;
 
 type
@@ -146,7 +146,6 @@ end;
 
 function ProcessFileW(hArcData: TArcHandle; Operation: Integer; DestPath, DestName: PWideChar): Integer; stdcall;
 var
-  FileHandle: THandle;
   Handle: TSevenZipHandle absolute hArcData;
 begin
   try
@@ -288,6 +287,7 @@ end;
 function DeleteFilesW(PackedFile, DeleteList: PWideChar): Integer; stdcall;
 var
   I: Integer;
+  PathEnd : WideChar;
   FileList : PWideChar;
   FileName : WideString;
   FileNameUTF8 : UTF8String;
@@ -316,12 +316,12 @@ begin
       while FileList^ <> #0 do
       begin
         FileName := FileList;  // Convert PWideChar to WideString (up to first #0)
-
+        PathEnd := (FileList + Length(FileName) - 1)^;
         // If ends with '.../*.*' or '.../' then delete directory.
-        if ((FileList + Length(FileName) - 1)^ = '*') then
-          TJclSevenzipUpdateArchive(Archive).DeleteItem(WideExtractFilePath(FileName))
+        if (PathEnd = '*') or (PathEnd = PathDelim) then
+          TJclSevenzipUpdateArchive(Archive).RemoveDirectory(WideExtractFilePath(FileName))
         else
-          TJclSevenzipUpdateArchive(Archive).DeleteItem(FileName);
+          TJclSevenzipUpdateArchive(Archive).RemoveItem(FileName);
 
         FileList := FileList + Length(FileName) + 1; // move after filename and ending #0
         if FileList^ = #0 then

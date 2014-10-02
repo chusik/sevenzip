@@ -28,7 +28,7 @@ type
    { TJclSevenzipUpdateArchiveHelper }
 
    TJclSevenzipUpdateArchiveHelper = class helper for TJclSevenzipUpdateArchive
-     procedure DeleteItem(const PackedName: WideString); overload;
+     procedure RemoveDirectory(const PackedName: WideString); overload;
    end;
 
   { TJclSevenzipDecompressArchiveHelper }
@@ -94,7 +94,6 @@ end;
 function ReadBooleanProp(FormatIndex: Cardinal;
   PropID: TPropID; out Value: WordBool): LongBool;
 var
-  PropSize: Cardinal;
   PropValue: TPropVariant;
 begin
   Result:= Succeeded(GetHandlerProperty2(FormatIndex, PropID, PropValue));
@@ -310,22 +309,20 @@ end;
 
 { TJclSevenzipUpdateArchiveHelper }
 
-procedure TJclSevenzipUpdateArchiveHelper.DeleteItem(const PackedName: WideString);
+procedure TJclSevenzipUpdateArchiveHelper.RemoveDirectory(const PackedName: WideString);
 var
-  IsDirectory: Boolean;
   DirectoryName: WideString;
   AItem: TJclCompressionItem;
   Index, PackedNamesIndex: Integer;
 begin
-  IsDirectory := False;
+  DirectoryName:= Copy(PackedName, 1, Length(PackedName) - 1);
+  // Remove directory
   for Index := 0 to ItemCount - 1 do
   begin
     AItem := Items[Index];
-    if WideSameText(AItem.PackedName, PackedName) then
+    // Can be with or without path delimiter at end
+    if WideSameText(AItem.PackedName, PackedName) or WideSameText(AItem.PackedName, DirectoryName) then
     begin
-      DirectoryName := AItem.PackedName;
-      if (AItem.Attributes and faDirectory) <> 0 then
-        IsDirectory := True;
       FItems.Delete(Index);
       PackedNamesIndex := -1;
       if (FPackedNames <> nil) and FPackedNames.Find(PackedName, PackedNamesIndex) then
@@ -333,21 +330,15 @@ begin
       Break;
     end;
   end;
-
-  if IsDirectory then
+  // Remove directory content
+  for Index := ItemCount - 1 downto 0 do
   begin
-    if PackedName[Length(PackedName)] = PathDelim then
-      DirectoryName := PackedName
-    else
-      DirectoryName := PackedName + PathDelim;
-
-    for Index := ItemCount - 1 downto 0 do
-      if (_wcsnicmp(PWideChar(DirectoryName), PWideChar(Items[Index].PackedName), Length(DirectoryName)) = 0) then
-      begin
-        if (FPackedNames <> nil) and FPackedNames.Find(Items[Index].PackedName, PackedNamesIndex) then
-          FPackedNames.Delete(PackedNamesIndex);
-        FItems.Delete(Index);
-      end;
+    if (_wcsnicmp(PWideChar(PackedName), PWideChar(Items[Index].PackedName), Length(PackedName)) = 0) then
+    begin
+      if (FPackedNames <> nil) and FPackedNames.Find(Items[Index].PackedName, PackedNamesIndex) then
+        FPackedNames.Delete(PackedNamesIndex);
+      FItems.Delete(Index);
+    end;
   end;
 end;
 

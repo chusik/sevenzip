@@ -1,4 +1,4 @@
-library wcx_sevenzip;
+library SevenZipWcx;
 
 uses
   Classes,
@@ -62,6 +62,8 @@ exports
   PackSetDefaultParams,
   CanYouHandleThisFileW
   ;
+
+{$R *.res}
 
 begin
 end.

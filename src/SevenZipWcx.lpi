@@ -10,10 +10,9 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="wcx_sevenzip"/>
+      <Title Value="SevenZipWcx"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
-      <Icon Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -42,9 +41,9 @@
     </RequiredPackages>
     <Units Count="4">
       <Unit0>
-        <Filename Value="wcx_sevenzip.dpr"/>
+        <Filename Value="SevenZipWcx.dpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="wcx_sevenzip"/>
+        <UnitName Value="SevenZipWcx"/>
       </Unit0>
       <Unit1>
         <Filename Value="SevenZipFunc.pas"/>
