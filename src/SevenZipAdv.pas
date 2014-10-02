@@ -202,49 +202,50 @@ const
   BufferSize = 524288;
 var
   AFile: THandle;
+  Buffer: TBytes;
   Idx, Index: Integer;
   ArchiveFormat: TArchiveFormat;
   ArchiveClass: TJclCompressionArchiveClass;
-  Buffer: array[0..Pred(BufferSize)] of Byte;
 begin
   if Length(ArchiveFormatsX) = 0 then LoadArchiveFormats(ArchiveFormatsX);
 
-    AFile:= FileOpenUTF8(AFileName, fmOpenRead or fmShareDenyNone);
-    if AFile = feInvalidHandle then Exit;
-    try
-     if FileRead(AFile, Buffer, SizeOf(Buffer)) = 0 then
-       Exit;
-    finally
-      FileClose(AFile);
-    end;
+  AFile:= FileOpenUTF8(AFileName, fmOpenRead or fmShareDenyNone);
+  if AFile = feInvalidHandle then Exit;
+  try
+    SetLength(Buffer, BufferSize);
+    if FileRead(AFile, Buffer[0], BufferSize) = 0 then
+      Exit;
+  finally
+    FileClose(AFile);
+  end;
 
-    for Index := Low(ArchiveFormatsX) to High(ArchiveFormatsX) do
+  for Index := Low(ArchiveFormatsX) to High(ArchiveFormatsX) do
+  begin
+    ArchiveFormat:= ArchiveFormatsX[Index];
+
+    if (not ArchiveFormat.Update) and (ArchiveType in [atUpdateArchive, atCompressArchive]) then
+      Continue;
+
+    // Skip container types
+    if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
+    if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
+    if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
+
+    if Length(ArchiveFormat.StartSignature) = 0 then Continue;
+    for Idx:= 0 to Pred(BufferSize) - Length(ArchiveFormat.StartSignature) do
     begin
-      ArchiveFormat:= ArchiveFormatsX[Index];
-
-      if (not ArchiveFormat.Update) and (ArchiveType in [atUpdateArchive, atCompressArchive]) then
-        Continue;
-
-      // Skip container types
-      if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatPe) then Continue;
-      if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatIso) then Continue;
-      if IsEqualGUID(ArchiveFormat.ClassID, CLSID_CFormatUdf) then Continue;
-
-      if Length(ArchiveFormat.StartSignature) = 0 then Continue;
-      for Idx:= 0 to Pred(BufferSize) - Length(ArchiveFormat.StartSignature) do
+      if CompareMem(@Buffer[Idx], @ArchiveFormat.StartSignature[0], Length(ArchiveFormat.StartSignature)) then
       begin
-        if CompareMem(@Buffer[Idx], @ArchiveFormat.StartSignature[0], Length(ArchiveFormat.StartSignature)) then
+        ArchiveClass:= FindArchiveFormat(ArchiveFormat.ClassID, ArchiveType);
+        if Assigned(ArchiveClass) and not Contains(Result, ArchiveClass) then
         begin
-          ArchiveClass:= FindArchiveFormat(ArchiveFormat.ClassID, ArchiveType);
-          if Assigned(ArchiveClass) and not Contains(Result, ArchiveClass) then
-          begin
-            SetLength(Result, Length(Result) + 1);
-            Result[High(Result)] := ArchiveClass;
-          end;
-          Break;
+          SetLength(Result, Length(Result) + 1);
+          Result[High(Result)] := ArchiveClass;
         end;
+        Break;
       end;
     end;
+  end;
 end;
 
 function FindUpdateFormats(const AFileName: TFileName): TJclUpdateArchiveClassArray;
