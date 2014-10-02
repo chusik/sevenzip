@@ -1,13 +1,11 @@
 library SevenZipWcx;
 
 uses
-  Classes,
-  SevenZipFunc, SevenZipDlg,
-  WcxPlugin, SevenZipAdv;
+  SevenZipFunc, SevenZipDlg, WcxPlugin, SevenZipAdv;
 
 function OpenArchive(var ArchiveData : tOpenArchiveData) : TArcHandle; stdcall;
 begin
-  Result:= wcxInvalidHandle;
+  Result:= 0;
   ArchiveData.OpenResult:= E_NOT_SUPPORTED;
 end;
 
@@ -36,9 +34,9 @@ end;
 
 function GetPackerCaps : Integer; stdcall;
 begin
-  Result := PK_CAPS_NEW or PK_CAPS_DELETE  or PK_CAPS_MODIFY
-         or PK_CAPS_MULTIPLE or PK_CAPS_OPTIONS or PK_CAPS_BY_CONTENT
-         or PK_CAPS_ENCRYPT;
+  Result:= PK_CAPS_NEW or PK_CAPS_DELETE  or PK_CAPS_MODIFY
+           or PK_CAPS_MULTIPLE or PK_CAPS_OPTIONS or PK_CAPS_BY_CONTENT
+           or PK_CAPS_ENCRYPT;
 end;
 
 exports
