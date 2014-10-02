@@ -27,6 +27,16 @@ procedure SetProcessDataProc (hArcData : TArcHandle; pProcessDataProc : TProcess
 begin
 end;
 
+function PackFiles(PackedFile, SubPath, SrcPath, AddList: PAnsiChar; Flags: Integer): Integer; stdcall;
+begin
+  Result:= E_NOT_SUPPORTED;
+end;
+
+function DeleteFiles(PackedFile, DeleteList: PAnsiChar): Integer; stdcall;
+begin
+  Result:= E_NOT_SUPPORTED;
+end;
+
 function GetBackgroundFlags: Integer; stdcall;
 begin
   Result:= BACKGROUND_UNPACK or BACKGROUND_PACK;
@@ -53,7 +63,9 @@ exports
   SetProcessDataProc,
   SetProcessDataProcW,
   { Optional }
+  PackFiles,
   PackFilesW,
+  DeleteFiles,
   DeleteFilesW,
   GetPackerCaps,
   GetBackgroundFlags,
