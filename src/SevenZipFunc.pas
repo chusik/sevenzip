@@ -236,8 +236,9 @@ begin
       if (Flags and PK_PACK_ENCRYPT) <> 0 then
       begin
         Encrypt:= Archive is TJcl7zUpdateArchive;
-        if ShowPasswordQuery(Encrypt, Password) then
-        begin
+        if not ShowPasswordQuery(Encrypt, Password) then
+          Exit(E_EABORTED)
+        else begin
           Archive.Password:= Password;
           if Encrypt then TJcl7zUpdateArchive(Archive).SetEncryptHeader(True);
         end;
