@@ -250,6 +250,7 @@ begin
         else begin
           Archive.Password:= Password;
           if Encrypt then TJcl7zUpdateArchive(Archive).SetEncryptHeader(True);
+          if Archive is TJclZipUpdateArchive then TJclZipUpdateArchive(Archive).SetEncryptionMethod(emAES256);
         end;
       end;
 
