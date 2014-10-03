@@ -26,7 +26,7 @@ implementation
 
 uses
   JwaWinBase, Windows, SysUtils, Classes, JclCompression, SevenZip, SevenZipAdv,
-  SevenZipDlg, LazFileUtils;
+  SevenZipDlg, SevenZipLng, LazFileUtils;
 
 type
 
@@ -361,6 +361,11 @@ begin
   GetArchiveFormats.RegisterFormat(TJclXzDecompressArchive);
   // Don't process PE files as archives
   GetArchiveFormats.UnregisterFormat(TJclPeDecompressArchive);
+  // Try to load 7z.dll
+  if not (Is7ZipLoaded or Load7Zip) then
+  begin
+    MessageBoxW(0, PWideChar(UTF8Decode(rsSevenZipLoadError)), 'SevenZip', MB_OK or MB_ICONERROR);
+  end;
 end;
 
 { TSevenZipUpdate }
