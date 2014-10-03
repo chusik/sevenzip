@@ -223,6 +223,7 @@ var
   AProgress: TSevenZipUpdate;
   AFormats: TJclUpdateArchiveClassArray;
 begin
+  if (Flags and PK_PACK_MOVE_FILES) <> 0 then Exit(E_NOT_SUPPORTED);
   FileNameUTF8 := UTF8Encode(WideString(PackedFile));
   AFormats := FindUpdateFormats(FileNameUTF8);
   for I := Low(AFormats) to High(AFormats) do
