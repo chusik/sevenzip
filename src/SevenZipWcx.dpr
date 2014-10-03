@@ -72,6 +72,8 @@ exports
   CanYouHandleThisFileW
   ;
 
+{$R *.res}
+
 begin
 end.
 
