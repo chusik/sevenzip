@@ -184,6 +184,9 @@ uses
 **************************************************************************************************}
 
 type
+
+{$IFNDEF FPC}
+
   TJclCompressionStream = class(TJclStream)
   private
     FOnProgress: TNotifyEvent;
@@ -259,8 +262,6 @@ function GetStreamFormats: TJclCompressionStreamFormats;
 // ZIP Support
 type
   TJclCompressionLevel = Integer;
-
-{$IFNDEF FPC}
 
   TJclZLibCompressStream = class(TJclCompressStream)
   private
@@ -2233,6 +2234,8 @@ var
   GlobalStreamFormats: TObject;
   GlobalArchiveFormats: TObject;
 
+{$IFNDEF FPC}
+
 //=== { TJclCompressionStream } ==============================================
 
 constructor TJclCompressionStream.Create(AStream: TStream);
@@ -2334,14 +2337,12 @@ begin
   inherited Create;
   FCompressFormats := TList.Create;
   FDecompressFormats := TList.Create;
-{$IFNDEF FPC}
   RegisterFormat(TJclZLibCompressStream);
   RegisterFormat(TJclZLibDecompressStream);
   RegisterFormat(TJclGZIPCompressionStream);
   RegisterFormat(TJclGZIPDecompressionStream);
   RegisterFormat(TJclBZIP2CompressionStream);
   RegisterFormat(TJclBZIP2DecompressionStream);
-{$ENDIF FPC}
 end;
 
 destructor TJclCompressionStreamFormats.Destroy;
@@ -2449,8 +2450,6 @@ begin
     GlobalStreamFormats := TJclCompressionStreamFormats.Create;
   Result := TJclCompressionStreamFormats(GlobalStreamFormats);
 end;
-
-{$IFNDEF FPC}
 
 //=== { TJclZLibCompressionStream } ==========================================
 
