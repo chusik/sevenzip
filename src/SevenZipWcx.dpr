@@ -45,8 +45,7 @@ end;
 function GetPackerCaps : Integer; stdcall;
 begin
   Result:= PK_CAPS_NEW or PK_CAPS_DELETE  or PK_CAPS_MODIFY
-           or PK_CAPS_MULTIPLE or PK_CAPS_OPTIONS or PK_CAPS_BY_CONTENT
-           or PK_CAPS_ENCRYPT;
+           or PK_CAPS_MULTIPLE or PK_CAPS_OPTIONS or PK_CAPS_ENCRYPT;
 end;
 
 exports
