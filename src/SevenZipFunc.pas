@@ -30,6 +30,12 @@ uses
 
 type
 
+   { ESevenZipAbort }
+
+    ESevenZipAbort = class(EJclCompressionError)
+
+    end;
+
   { TSevenZipUpdate }
 
   TSevenZipUpdate = class
@@ -66,6 +72,8 @@ begin
     Result:= E_EREAD
   else if E is EWriteError then
     Result:= E_EWRITE
+  else if E is ESevenZipAbort then
+    Result:= E_EABORTED
   else
     Result:= E_UNKNOWN_FORMAT;
 end;
@@ -376,7 +384,8 @@ procedure TSevenZipUpdate.JclCompressionPassword(Sender: TObject;
 var
   Encrypt: Boolean = False;
 begin
-  ShowPasswordQuery(Encrypt, Password);
+  if not ShowPasswordQuery(Encrypt, Password) then
+    raise ESevenZipAbort.Create(EmptyStr);
 end;
 
 procedure TSevenZipUpdate.JclCompressionProgress(Sender: TObject; const Value,
