@@ -5,7 +5,7 @@ unit SevenZipOpt;
 interface
 
 uses
-  Classes, SysUtils, Windows, IniFiles;
+  Classes, SysUtils, Windows, IniFiles, JclCompression;
 
 const
   cKilo = 1024;
@@ -13,17 +13,17 @@ const
   cGiga = cKilo * cKilo * cKilo;
 
 const
-  DeflateDict: array[0..0] of Int64 =
+  DeflateDict: array[0..0] of PtrInt =
   (
    cKilo * 32
   );
 
-  Deflate64Dict: array[0..0] of Int64 =
+  Deflate64Dict: array[0..0] of PtrInt =
   (
    cKilo * 64
   );
 
-  Bzip2Dict: array[0..8] of Int64 =
+  Bzip2Dict: array[0..8] of PtrInt =
   (
    cKilo * 100,
    cKilo * 200,
@@ -36,7 +36,7 @@ const
    cKilo * 900
   );
 
-  LZMADict: array[0..12] of Int64 =
+  LZMADict: array[0..12] of PtrInt =
   (
    cKilo * 64,
    cMega,
@@ -53,7 +53,7 @@ const
    cMega * 64
   );
 
-  PPMdDict: array[0..17] of Int64 =
+  PPMdDict: array[0..17] of PtrInt =
   (
    cMega,
    cMega * 2,
@@ -75,37 +75,38 @@ const
    cMega * 512
   );
 
-  DeflateWordSize: array[0..11] of Int64 =
+  DeflateWordSize: array[0..11] of PtrInt =
     (8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 258);
 
-  Deflate64WordSize: array[0..11] of Int64 =
+  Deflate64WordSize: array[0..11] of PtrInt =
     (8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 257);
 
-  LZMAWordSize: array[0..11] of Int64 =
+  LZMAWordSize: array[0..11] of PtrInt =
     (8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 273);
 
-  PPMdWordSize: array[0..14] of Int64 =
+  PPMdWordSize: array[0..14] of PtrInt =
     (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
-  SolidBlock: array[0..16] of Int64 =
+  // Stored as block size / 1024
+  SolidBlock: array[0..16] of PtrInt =
   (
+    cKilo,
+    cKilo * 2,
+    cKilo * 4,
+    cKilo * 8,
+    cKilo * 16,
+    cKilo * 32,
+    cKilo * 64,
+    cKilo * 128,
+    cKilo * 256,
+    cKilo * 512,
     cMega,
     cMega * 2,
     cMega * 4,
     cMega * 8,
     cMega * 16,
     cMega * 32,
-    cMega * 64,
-    cMega * 128,
-    cMega * 256,
-    cMega * 512,
-    cGiga,
-    cGiga * 2,
-    cGiga * 4,
-    cGiga * 8,
-    cGiga * 16,
-    cGiga * 32,
-    cGiga * 64
+    cMega * 64
   );
 
 type
@@ -120,12 +121,12 @@ type
   end;
 
   TFormatOptions = record
-    Level: Integer;
-    Method: Integer;
-    Dictionary: Integer;
-    WordSize: Integer;
-    SolidSize: Integer;
-    ThreadCount: Integer;
+    Level: PtrInt;
+    Method: PtrInt;
+    Dictionary: PtrInt;
+    WordSize: PtrInt;
+    SolidSize: PtrInt;
+    ThreadCount: PtrInt;
   end;
 
 function GetNumberOfProcessors: LongWord;
@@ -140,13 +141,13 @@ var
 var
   PluginConfig: array[TArchiveFormat] of TFormatOptions =
   (
-   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: 1; Method: 0; Dictionary: 0; WordSize: 4; SolidSize: 0; ThreadCount: 0;),
-   (Level: 0; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
-   (Level: 0; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
-   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: 3; Method: 0; Dictionary: 0; WordSize: 4; SolidSize: 12; ThreadCount: 1;)
+   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA); Dictionary: cMega * 16; WordSize: 32; SolidSize: cMega * 2; ThreadCount: 2;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmBZip2); Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: 0; WordSize: 4; SolidSize: 0; ThreadCount: 0;),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA2); Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: 0; WordSize: 4; SolidSize: 12; ThreadCount: 1;)
   );
 
 implementation

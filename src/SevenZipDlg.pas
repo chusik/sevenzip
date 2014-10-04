@@ -29,6 +29,55 @@ const
   IDC_COMP_THREAD = 1082;
   IDC_MAX_THREAD = 1083;
 
+function GetComboBox(hwndDlg: HWND; ItemID: Integer): PtrInt;
+var
+  Index, Count: Integer;
+begin
+  Index:= SendDlgItemMessage(hwndDlg, ItemID, CB_GETCURSEL, 0, 0);
+  Result:= SendDlgItemMessage(hwndDlg, ItemID, CB_GETITEMDATA, Index, 0);
+end;
+
+procedure SetComboBox(hwndDlg: HWND; ItemID: Integer; ItemData: PtrInt);
+var
+  Index, Count: Integer;
+begin
+  Count:= SendDlgItemMessage(hwndDlg, ItemID, CB_GETCOUNT, 0, 0);
+  for Index:= 0 to Count - 1 do
+  begin
+    if SendDlgItemMessage(hwndDlg, ItemID, CB_GETITEMDATA, Index, 0) = ItemData then
+    begin
+      SendDlgItemMessage(hwndDlg, ItemID, CB_SETCURSEL, Index, 0);
+      Exit;
+    end;
+  end;
+end;
+
+procedure LoadArchiver(hwndDlg: HWND);
+var
+  Format: TArchiveFormat;
+begin
+  Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
+  SetComboBox(hwndDlg, IDC_COMP_LEVEL, PluginConfig[Format].Level);
+  SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
+  SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
+  SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
+  SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
+  SetComboBox(hwndDlg, IDC_COMP_THREAD, PluginConfig[Format].ThreadCount);
+end;
+
+procedure SaveArchiver(hwndDlg: HWND);
+var
+  Format: TArchiveFormat;
+begin
+  Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
+  PluginConfig[Format].Level:= GetComboBox(hwndDlg, IDC_COMP_LEVEL);
+  PluginConfig[Format].Method:= GetComboBox(hwndDlg, IDC_COMP_METHOD);
+  PluginConfig[Format].Dictionary:= GetComboBox(hwndDlg, IDC_COMP_DICT);
+  PluginConfig[Format].WordSize:= GetComboBox(hwndDlg, IDC_COMP_WORD);
+  PluginConfig[Format].SolidSize:= GetComboBox(hwndDlg, IDC_COMP_SOLID);
+  PluginConfig[Format].ThreadCount:= GetComboBox(hwndDlg, IDC_COMP_THREAD);
+end;
+
 function ComboBoxAdd(hwndDlg: HWND; ItemID: Integer; ItemText: UTF8String; ItemData: PtrInt): Integer;
 var
   Text: WideString;
@@ -50,10 +99,10 @@ begin
     ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, 'Non-solid', 0);
     for Index:= Low(SolidBlock) to High(SolidBlock) do
     begin
-      ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, FormatFileSize(SolidBlock[Index]), PtrInt(@SolidBlock[Index]));
+      ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, FormatFileSize(Int64(SolidBlock[Index]) * cKilo), PtrInt(SolidBlock[Index]));
     end;
     ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, 'Solid', 0);
-    SendDlgItemMessage(hwndDlg, IDC_COMP_SOLID, CB_SETCURSEL, PluginConfig[Format].SolidSize, 0);
+    SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
   end;
 end;
 
@@ -99,11 +148,11 @@ begin
     begin
       for Index:= Low(DeflateDict) to High(DeflateDict) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(DeflateDict[Index]), PtrInt(@DeflateDict[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(DeflateDict[Index]), PtrInt(DeflateDict[Index]));
       end;
       for Index:= Low(DeflateWordSize) to High(DeflateWordSize) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(DeflateWordSize[Index]), PtrInt(@DeflateWordSize[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(DeflateWordSize[Index]), PtrInt(DeflateWordSize[Index]));
       end;
       UpdateThread(hwndDlg, 1);
     end;
@@ -111,11 +160,11 @@ begin
     begin
       for Index:= Low(Deflate64Dict) to High(Deflate64Dict) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(Deflate64Dict[Index]), PtrInt(@Deflate64Dict[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(Deflate64Dict[Index]), PtrInt(Deflate64Dict[Index]));
       end;
       for Index:= Low(Deflate64WordSize) to High(Deflate64WordSize) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(Deflate64WordSize[Index]), PtrInt(@Deflate64WordSize[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(Deflate64WordSize[Index]), PtrInt(Deflate64WordSize[Index]));
       end;
       UpdateThread(hwndDlg, 128);
     end;
@@ -124,11 +173,11 @@ begin
     begin
       for Index:= Low(LZMADict) to High(LZMADict) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(LZMADict[Index]), PtrInt(@LZMADict[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(LZMADict[Index]), PtrInt(LZMADict[Index]));
       end;
       for Index:= Low(LZMAWordSize) to High(LZMAWordSize) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(LZMAWordSize[Index]), PtrInt(@LZMAWordSize[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(LZMAWordSize[Index]), PtrInt(LZMAWordSize[Index]));
       end;
       UpdateThread(hwndDlg, 2);
     end;
@@ -136,7 +185,7 @@ begin
     begin
       for Index:= Low(BZip2Dict) to High(BZip2Dict) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(BZip2Dict[Index]), PtrInt(@BZip2Dict[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(BZip2Dict[Index]), PtrInt(BZip2Dict[Index]));
       end;
       UpdateThread(hwndDlg, 32);
     end;
@@ -144,11 +193,11 @@ begin
     begin
       for Index:= Low(PPMdDict) to High(PPMdDict) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(PPMdDict[Index]), PtrInt(@PPMdDict[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_DICT, FormatFileSize(PPMdDict[Index]), PtrInt(PPMdDict[Index]));
       end;
       for Index:= Low(PPMdWordSize) to High(PPMdWordSize) do
       begin
-        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(PPMdWordSize[Index]), PtrInt(@PPMdWordSize[Index]));
+        ComboBoxAdd(hwndDlg, IDC_COMP_WORD, IntToStr(PPMdWordSize[Index]), PtrInt(PPMdWordSize[Index]));
       end;
       UpdateThread(hwndDlg, 1);
     end;
@@ -157,8 +206,8 @@ begin
     end;
   end;
   UpdateSolid(hwndDlg);
-  SendDlgItemMessage(hwndDlg, IDC_COMP_DICT, CB_SETCURSEL, PluginConfig[Format].Dictionary, 0);
-  SendDlgItemMessage(hwndDlg, IDC_COMP_WORD, CB_SETCURSEL, PluginConfig[Format].WordSize, 0);
+  SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
+  SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
 end;
 
 procedure UpdateLevel(hwndDlg: HWND);
@@ -234,7 +283,7 @@ begin
      ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA2', PtrInt(cmLZMA2));
      ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'PPMd', PtrInt(cmPPMd));
      ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'BZip2', PtrInt(cmBZip2));
-     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, PluginConfig[Format].Method, 0);
+     SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
    end;
   afBzip2:
    begin
@@ -264,8 +313,8 @@ begin
      ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'PPMd', PtrInt(cmPPMd));
    end;
   end;
-  SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_SETCURSEL, PluginConfig[Format].Level, 0);
-  SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, PluginConfig[Format].Method, 0);
+  SetComboBox(hwndDlg, IDC_COMP_LEVEL, PluginConfig[Format].Level);
+  SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
   UpdateMethod(hwndDlg);
 end;
 
@@ -311,7 +360,7 @@ begin
       IDCANCEL:
         EndDialog(hwndDlg, IDCANCEL);
       9:
-        SaveConfiguration;
+        SaveArchiver(hwndDlg);
       end;
     end;
     WM_CLOSE:
