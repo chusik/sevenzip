@@ -121,6 +121,8 @@ begin
   SendDlgItemMessage(hwndDlg, IDC_COMP_WORD, CB_RESETCONTENT, 0, 0);
   SendDlgItemMessage(hwndDlg, IDC_COMP_SOLID, CB_RESETCONTENT, 0, 0);
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_DICT), not (Format in [afTar, afWim]));
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_WORD), Format in [afSevenZip, afGzip, afXz, afZip]);
   // Get method index
   Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETCURSEL, 0, 0);
   Method:= TJclCompressionMethod(SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETITEMDATA, Index, 0));
@@ -222,6 +224,8 @@ begin
   Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_GETCURSEL, 0, 0);
   Format:= TArchiveFormat(SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_GETITEMDATA, Index, 0));
   SetWindowLongPtr(hwndDlg, GWLP_USERDATA, LONG_PTR(Format));
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_SOLID), Format = afSevenZip);
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_METHOD), not (Format in [afTar, afWim]));
   // 7Zip and Zip
   if Format in [afSevenZip, afZip] then
   begin
