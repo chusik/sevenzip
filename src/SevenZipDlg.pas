@@ -32,6 +32,7 @@ const
 type
 
   TArchiveFormat = (afSevenZip, afBzip2, afGzip, afTar, afWim, afXz, afZip);
+  TCompressionLevel = (clStore, clFastest, clFast, clNormal, clMaximum, clUltra);
 
   PPasswordData = ^TPasswordData;
   TPasswordData = record
@@ -190,6 +191,25 @@ begin
   SendDlgItemMessage(hwndDlg, IDC_COMP_WORD, CB_SETCURSEL, PluginConfig[Format].WordSize, 0);
 end;
 
+procedure UpdateLevel(hwndDlg: HWND);
+var
+  Index: Integer;
+  Format: TArchiveFormat;
+  Level: TCompressionLevel;
+begin
+  Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
+  // Get Level index
+  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETCURSEL, 0, 0);
+  Level:= TCompressionLevel(SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETITEMDATA, Index, 0));
+  case Format of
+  afSevenZip:
+    case Level of
+      clStore:
+      ;
+    end;
+  end;
+end;
+
 procedure UpdateFormat(hwndDlg: HWND);
 var
   Index: Integer;
@@ -206,33 +226,33 @@ begin
   if Format in [afSevenZip, afZip] then
   begin
     // Fill compression level
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelStore, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFastest, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFast, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelNormal, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelMaximum, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelUltra, 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelStore, PtrInt(clStore));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFastest, PtrInt(clFastest));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFast, PtrInt(clFast));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelNormal, PtrInt(clNormal));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelMaximum, PtrInt(clMaximum));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelUltra, PtrInt(clUltra));
   end
   else if Format in [afBzip2, afXz] then
   begin
     // Fill compression level
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFastest, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFast, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelNormal, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelMaximum, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelUltra, 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFastest, PtrInt(clFastest));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFast, PtrInt(clFast));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelNormal, PtrInt(clNormal));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelMaximum, PtrInt(clMaximum));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelUltra, PtrInt(clUltra));
   end
   else if Format in [afGzip] then
   begin
     // Fill compression level
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFast, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelNormal, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelMaximum, 0);
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelUltra, 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelFast, PtrInt(clFast));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelNormal, PtrInt(clNormal));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelMaximum, PtrInt(clMaximum));
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelUltra, PtrInt(clUltra));
   end
   else begin
     // Fill compression level
-    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelStore, 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelStore, PtrInt(clStore));
   end;
   case Format of
   afSevenZip:
@@ -310,6 +330,11 @@ begin
         if (HIWORD(wParam) = CBN_SELCHANGE) then
         begin
           UpdateMethod(hwndDlg);
+        end;
+      IDC_COMP_LEVEL:
+        if (HIWORD(wParam) = CBN_SELCHANGE) then
+        begin
+          UpdateLevel(hwndDlg);
         end;
       IDCANCEL:
         EndDialog(hwndDlg, IDCANCEL);
