@@ -21,6 +21,7 @@ function PackFilesW(PackedFile: PWideChar; SubPath: PWideChar; SrcPath: PWideCha
 function DeleteFilesW(PackedFile, DeleteList: PWideChar): Integer; stdcall;
 function CanYouHandleThisFileW(FileName: PWideChar): Boolean; stdcall;
 procedure PackSetDefaultParams(dps: PPackDefaultParamStruct); stdcall;
+procedure ConfigurePacker(Parent: HWND; DllInstance: THandle); stdcall;
 
 implementation
 
@@ -376,6 +377,11 @@ begin
   begin
     MessageBoxW(0, PWideChar(UTF8Decode(rsSevenZipLoadError)), 'SevenZip', MB_OK or MB_ICONERROR);
   end;
+end;
+
+procedure ConfigurePacker(Parent: WcxPlugin.HWND; DllInstance: THandle); stdcall;
+begin
+  ShowConfigurationDialog(Parent);
 end;
 
 { TSevenZipUpdate }

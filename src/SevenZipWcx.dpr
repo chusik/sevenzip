@@ -67,6 +67,7 @@ exports
   DeleteFiles,
   DeleteFilesW,
   GetPackerCaps,
+  ConfigurePacker,
   GetBackgroundFlags,
   PackSetDefaultParams,
   CanYouHandleThisFileW
