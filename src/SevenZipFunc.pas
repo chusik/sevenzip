@@ -27,7 +27,7 @@ implementation
 
 uses
   JwaWinBase, Windows, SysUtils, Classes, JclCompression, SevenZip, SevenZipAdv,
-  SevenZipDlg, SevenZipLng, LazFileUtils;
+  SevenZipDlg, SevenZipLng, SevenZipOpt, LazFileUtils;
 
 type
 
@@ -363,6 +363,8 @@ procedure PackSetDefaultParams(dps: PPackDefaultParamStruct); stdcall;
 var
   ModulePath: AnsiString;
 begin
+  // Save configuration file name
+  ConfigFile:= ExtractFilePath(dps^.DefaultIniName) + 'sevenzip.ini';
   // Load library from plugin path
   if GetModulePath(ModulePath) and FileExists(ModulePath + SevenzipDefaultLibraryName) then
   begin

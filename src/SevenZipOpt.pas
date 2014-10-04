@@ -5,7 +5,7 @@ unit SevenZipOpt;
 interface
 
 uses
-  Classes, SysUtils, Windows;
+  Classes, SysUtils, Windows, IniFiles;
 
 const
   cKilo = 1024;
@@ -108,11 +108,51 @@ const
     cGiga * 64
   );
 
+type
+
+  TArchiveFormat = (afSevenZip, afBzip2, afGzip, afTar, afWim, afXz, afZip);
+  TCompressionLevel = (clStore, clFastest, clFast, clNormal, clMaximum, clUltra);
+
+  PPasswordData = ^TPasswordData;
+  TPasswordData = record
+    EncryptHeader: Boolean;
+    Password: array[0..MAX_PATH] of WideChar;
+  end;
+
+  TFormatOptions = record
+    Level: Integer;
+    Method: Integer;
+    Dictionary: Integer;
+    WordSize: Integer;
+    SolidSize: Integer;
+    ThreadCount: Integer;
+  end;
+
 function GetNumberOfProcessors: LongWord;
 function FormatFileSize(ASize: Int64): UTF8String;
 
+procedure LoadConfiguration;
+procedure SaveConfiguration;
+
+var
+  ConfigFile: AnsiString;
+
+var
+  PluginConfig: array[TArchiveFormat] of TFormatOptions =
+  (
+   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
+   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
+   (Level: 1; Method: 0; Dictionary: 0; WordSize: 4; SolidSize: 0; ThreadCount: 0;),
+   (Level: 0; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
+   (Level: 0; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
+   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
+   (Level: 3; Method: 0; Dictionary: 0; WordSize: 4; SolidSize: 12; ThreadCount: 1;)
+  );
+
 implementation
 
+uses
+  TypInfo;
 
 function GetNumberOfProcessors: LongWord;
 var
@@ -134,6 +174,62 @@ begin
     Result:= IntToStr(ASize div cKilo) + 'Kb'
   else
     Result:= IntToStr(ASize);
+end;
+
+procedure LoadConfiguration;
+var
+  Ini: TIniFile;
+  Section: AnsiString;
+  ArchiveFormat: TArchiveFormat;
+begin
+  try
+    Ini:= TIniFile.Create(ConfigFile);
+    try
+      for ArchiveFormat:= Low(TArchiveFormat) to High(TArchiveFormat) do
+      begin
+        Section:= GetEnumName(TypeInfo(TArchiveFormat), Integer(ArchiveFormat));
+        PluginConfig[ArchiveFormat].Level:= Ini.ReadInteger(Section, 'Level', PluginConfig[ArchiveFormat].Level);
+        PluginConfig[ArchiveFormat].Method:= Ini.ReadInteger(Section, 'Method', PluginConfig[ArchiveFormat].Method);
+        PluginConfig[ArchiveFormat].Dictionary:= Ini.ReadInteger(Section, 'Dictionary', PluginConfig[ArchiveFormat].Dictionary);
+        PluginConfig[ArchiveFormat].WordSize:= Ini.ReadInteger(Section, 'WordSize', PluginConfig[ArchiveFormat].WordSize);
+        PluginConfig[ArchiveFormat].SolidSize:= Ini.ReadInteger(Section, 'SolidSize', PluginConfig[ArchiveFormat].SolidSize);
+        PluginConfig[ArchiveFormat].ThreadCount:= Ini.ReadInteger(Section, 'ThreadCount', PluginConfig[ArchiveFormat].ThreadCount);
+      end;
+    finally
+      Ini.Free;
+    end;
+  except
+    on E: Exception do
+      MessageBox(0, PAnsiChar(E.Message), nil, MB_OK or MB_ICONERROR);
+  end;
+end;
+
+procedure SaveConfiguration;
+var
+  Ini: TIniFile;
+  Section: AnsiString;
+  ArchiveFormat: TArchiveFormat;
+begin
+  try
+    Ini:= TIniFile.Create(ConfigFile);
+    try
+      for ArchiveFormat:= Low(TArchiveFormat) to High(TArchiveFormat) do
+      begin
+        Section:= GetEnumName(TypeInfo(TArchiveFormat), Integer(ArchiveFormat));
+        Ini.WriteInteger(Section, 'Level', PluginConfig[ArchiveFormat].Level);
+        Ini.WriteInteger(Section, 'Method', PluginConfig[ArchiveFormat].Method);
+        Ini.WriteInteger(Section, 'Dictionary', PluginConfig[ArchiveFormat].Dictionary);
+        Ini.WriteInteger(Section, 'WordSize', PluginConfig[ArchiveFormat].WordSize);
+        Ini.WriteInteger(Section, 'SolidSize', PluginConfig[ArchiveFormat].SolidSize);
+        Ini.WriteInteger(Section, 'ThreadCount', PluginConfig[ArchiveFormat].ThreadCount);
+      end;
+    finally
+      Ini.Free;
+    end;
+  except
+    on E: Exception do
+      MessageBox(0, PAnsiChar(E.Message), nil, MB_OK or MB_ICONERROR);
+  end;
 end;
 
 end.

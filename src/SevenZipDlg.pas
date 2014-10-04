@@ -29,38 +29,6 @@ const
   IDC_COMP_THREAD = 1082;
   IDC_MAX_THREAD = 1083;
 
-type
-
-  TArchiveFormat = (afSevenZip, afBzip2, afGzip, afTar, afWim, afXz, afZip);
-  TCompressionLevel = (clStore, clFastest, clFast, clNormal, clMaximum, clUltra);
-
-  PPasswordData = ^TPasswordData;
-  TPasswordData = record
-    EncryptHeader: Boolean;
-    Password: array[0..MAX_PATH] of WideChar;
-  end;
-
-  TFormatOptions = record
-    Level: Integer;
-    Method: Integer;
-    Dictionary: Integer;
-    WordSize: Integer;
-    SolidSize: Integer;
-    ThreadCount: Integer;
-  end;
-
-var
-  PluginConfig: array[TArchiveFormat] of TFormatOptions =
-  (
-   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: 1; Method: 0; Dictionary: 0; WordSize: 4; SolidSize: 0; ThreadCount: 0;),
-   (Level: 0; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
-   (Level: 0; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
-   (Level: 3; Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: 3; Method: 0; Dictionary: 0; WordSize: 4; SolidSize: 12; ThreadCount: 1;)
-  );
-
 function ComboBoxAdd(hwndDlg: HWND; ItemID: Integer; ItemText: UTF8String; ItemData: PtrInt): Integer;
 var
   Text: WideString;
@@ -342,6 +310,8 @@ begin
         end;
       IDCANCEL:
         EndDialog(hwndDlg, IDCANCEL);
+      9:
+        SaveConfiguration;
       end;
     end;
     WM_CLOSE:
