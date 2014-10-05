@@ -49,9 +49,12 @@ type
   TSevenZipHandle = class(TSevenZipUpdate)
     Index,
     Count: LongWord;
-    FileName: UTF8String;
-    Directory: UTF8String;
+    OpenMode,
+    OperationMode: Integer;
+    ProcessIndex: Cardinal;
     ArchiveName: UTF8String;
+    ProcessArray: TCardinalArray;
+    FileName: array of UTF8String;
     Archive: TJclDecompressArchive;
     ProcessDataProc: TProcessDataProcW;
   public
@@ -97,6 +100,8 @@ begin
   with Handle do
   begin
     Index:= 0;
+    ProcessIndex:= 0;
+    OpenMode:= ArchiveData.OpenMode;
     ArchiveName := UTF8Encode(WideString(ArchiveData.ArcName));
     AFormats := FindDecompressFormats(ArchiveName);
     for I := Low(AFormats) to High(AFormats) do
@@ -110,6 +115,12 @@ begin
         Archive.ListFiles;
 
         Count:= Archive.ItemCount;
+
+        if OpenMode = PK_OM_EXTRACT then
+        begin
+          SetLength(FileName, Count);
+          SetLength(ProcessArray, Count);
+        end;
 
         ArchiveData.OpenResult:= E_SUCCESS;
 
@@ -167,21 +178,17 @@ begin
           begin
             if Assigned(DestPath) then
             begin
-              FileName:= UTF8Encode(WideString(DestName));
-              Directory:= IncludeTrailingPathDelimiter(UTF8Encode(WideString(DestPath)));
+              FileName[Index]:= IncludeTrailingPathDelimiter(UTF8Encode(WideString(DestPath))) +
+                                UTF8Encode(WideString(DestName));
             end
             else begin
-              Directory:= ExtractFilePath(UTF8Encode(WideString(DestName)));
-              FileName:= ExtractFileName(UTF8Encode(WideString(DestName)));
+              FileName[Index]:= UTF8Encode(WideString(DestName));
             end;
           end;
-          try
-            Result:= E_SUCCESS;
-            TJclSevenzipDecompressArchive(Archive).ExtractItem(Index, Directory, Operation = PK_TEST);
-          except
-            on E: Exception do
-              Result:= GetArchiveError(E);
-          end;
+          Result:= E_SUCCESS;
+          OperationMode:= Operation;
+          ProcessArray[ProcessIndex]:= Index;
+          Inc(ProcessIndex);
         end;
       else
         Result:= E_SUCCESS;
@@ -197,9 +204,17 @@ var
 begin
   Result:= E_SUCCESS;
   if (hArcData <> wcxInvalidHandle) then
-  begin
-    Handle.Archive.Free;
-    Handle.Free;
+  with Handle do begin
+    if OpenMode = PK_OM_EXTRACT then
+    try
+      SetLength(ProcessArray, ProcessIndex);
+      TJclSevenzipDecompressArchive(Archive).ProcessSelected(ProcessArray, OperationMode = PK_TEST);
+    except
+      on E: Exception do
+        Result:= GetArchiveError(E);
+    end;
+    Archive.Free;
+    Free;
   end;
 end;
 
@@ -431,7 +446,7 @@ function TSevenZipHandle.JclCompressionExtract(Sender: TObject; AIndex: Integer;
   var AFileName: TFileName; var Stream: TStream; var AOwnsStream: Boolean): Boolean;
 begin
   Result:= True;
-  AFileName:= Directory + FileName;
+  AFileName:= FileName[AIndex];
 end;
 
 end.

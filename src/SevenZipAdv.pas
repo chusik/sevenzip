@@ -9,6 +9,7 @@ uses
 
 type
   TBytes = array of Byte;
+  TCardinalArray = array of Cardinal;
   TJclCompressionArchiveClassArray = array of TJclCompressionArchiveClass;
 
 type
@@ -34,7 +35,7 @@ type
   { TJclSevenzipDecompressArchiveHelper }
 
   TJclSevenzipDecompressArchiveHelper = class helper for TJclSevenzipDecompressArchive
-    procedure ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
+    procedure ProcessSelected(const SelectedArray: TCardinalArray; Verify: Boolean);
   end;
 
 function FindUpdateFormats(const AFileName: TFileName): TJclUpdateArchiveClassArray;
@@ -345,19 +346,18 @@ end;
 
 { TJclSevenzipDecompressArchiveHelper }
 
-procedure TJclSevenzipDecompressArchiveHelper.ExtractItem(Index: Cardinal; const ADestinationDir: UTF8String; Verify: Boolean);
+procedure TJclSevenzipDecompressArchiveHelper.ProcessSelected(const SelectedArray: TCardinalArray; Verify: Boolean);
 var
   AExtractCallback: IArchiveExtractCallback;
 begin
   CheckNotDecompressing;
 
   FDecompressing := True;
-  FDestinationDir := ADestinationDir;
   AExtractCallback := TJclSevenzipExtractCallback.Create(Self);
   try
     OpenArchive;
 
-    SevenzipCheck(InArchive.Extract(@Index, 1, Cardinal(Verify), AExtractCallback));
+    SevenzipCheck(InArchive.Extract(@SelectedArray[0], Length(SelectedArray), Cardinal(Verify), AExtractCallback));
     CheckOperationSuccess;
   finally
     FDestinationDir := '';
