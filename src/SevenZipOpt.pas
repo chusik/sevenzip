@@ -142,12 +142,12 @@ var
   PluginConfig: array[TArchiveFormat] of TFormatOptions =
   (
    (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA); Dictionary: cMega * 16; WordSize: 32; SolidSize: cMega * 2; ThreadCount: 2;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmBZip2); Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: 0; WordSize: 4; SolidSize: 0; ThreadCount: 0;),
-   (Level: PtrInt(clStore); Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
-   (Level: PtrInt(clStore); Method: 0; Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 0;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA2); Dictionary: 8; WordSize: 4; SolidSize: 12; ThreadCount: 1;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: 0; WordSize: 4; SolidSize: 12; ThreadCount: 1;)
+   (Level: PtrInt(clNormal); Method: PtrInt(cmBZip2); Dictionary: cKilo * 900; WordSize: 0; SolidSize: 0; ThreadCount: 2;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 1;),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1;),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA2); Dictionary: cMega * 16; WordSize: 32; SolidSize: 0; ThreadCount: 2;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 2;)
   );
 
 implementation
