@@ -243,13 +243,19 @@ var
   FilePath: WideString;
   FileName: WideString;
   FileNameUTF8: UTF8String;
-  Archive: TJclUpdateArchive;
   AProgress: TSevenZipUpdate;
-  AFormats: TJclUpdateArchiveClassArray;
+  Archive: TJclCompressArchive;
+  AFormats: TJclCompressArchiveClassArray;
 begin
   if (Flags and PK_PACK_MOVE_FILES) <> 0 then Exit(E_NOT_SUPPORTED);
   FileNameUTF8 := UTF8Encode(WideString(PackedFile));
-  AFormats := FindUpdateFormats(FileNameUTF8);
+
+  // If create new archive
+  if (GetFileAttributesW(PackedFile) = INVALID_FILE_ATTRIBUTES) then
+    AFormats := FindCompressFormats(FileNameUTF8)
+  else
+    AFormats := TJclCompressArchiveClassArray(FindUpdateFormats(FileNameUTF8));
+
   for I := Low(AFormats) to High(AFormats) do
   begin
     Archive := AFormats[I].Create(FileNameUTF8, 0, False);
@@ -260,19 +266,21 @@ begin
 
       if (Flags and PK_PACK_ENCRYPT) <> 0 then
       begin
-        Encrypt:= Archive is TJcl7zUpdateArchive;
+        Encrypt:= Archive is IJclArchiveEncryptHeader;
         if not ShowPasswordQuery(Encrypt, Password) then
           Exit(E_EABORTED)
         else begin
           Archive.Password:= Password;
-          if Encrypt then TJcl7zUpdateArchive(Archive).SetEncryptHeader(True);
+          if Archive is TJcl7zUpdateArchive then TJcl7zUpdateArchive(Archive).SetEncryptHeader(Encrypt);
+          if Archive is TJcl7zCompressArchive then TJcl7zCompressArchive(Archive).SetEncryptHeader(Encrypt);
           if Archive is TJclZipUpdateArchive then TJclZipUpdateArchive(Archive).SetEncryptionMethod(emAES256);
+          if Archive is TJclZipCompressArchive then TJclZipCompressArchive(Archive).SetEncryptionMethod(emAES256);
         end;
       end;
 
-      if (GetFileAttributesW(PackedFile) <> INVALID_FILE_ATTRIBUTES) then
+      if (Archive is TJclUpdateArchive) then
       try
-        Archive.ListFiles;
+        TJclUpdateArchive(Archive).ListFiles;
       except
         Continue;
       end;
