@@ -395,6 +395,9 @@ begin
   end;
   // Process Xz files as archives
   GetArchiveFormats.RegisterFormat(TJclXzDecompressArchive);
+  // Replace TJclXzCompressArchive by TJclXzCompressArchiveEx
+  GetArchiveFormats.UnregisterFormat(TJclXzCompressArchive);
+  GetArchiveFormats.RegisterFormat(TJclXzCompressArchiveEx);
   // Don't process PE files as archives
   GetArchiveFormats.UnregisterFormat(TJclPeDecompressArchive);
   // Try to load 7z.dll

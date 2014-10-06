@@ -26,6 +26,16 @@ type
      StartSignature: TBytes;
    end;
 
+   { TJclXzCompressArchiveEx }
+
+   TJclXzCompressArchiveEx = class(TJclSevenzipCompressArchive)
+   public
+     class function ArchiveExtensions: string; override;
+     class function ArchiveName: string; override;
+     class function ArchiveSubExtensions: string; override;
+     class function ArchiveCLSID: TGUID; override;
+   end;
+
    { TJclSevenzipUpdateArchiveHelper }
 
    TJclSevenzipUpdateArchiveHelper = class helper for TJclSevenzipUpdateArchive
@@ -307,6 +317,28 @@ begin
 
   // Save archive type in cache
   DecompressFormatsCache.ArchiveClassArray:= ArchiveClassArray;
+end;
+
+{ TJclXzCompressArchiveEx }
+
+class function TJclXzCompressArchiveEx.ArchiveExtensions: string;
+begin
+  Result:= TJclXzCompressArchive.ArchiveExtensions;
+end;
+
+class function TJclXzCompressArchiveEx.ArchiveName: string;
+begin
+  Result:= TJclXzCompressArchive.ArchiveName;
+end;
+
+class function TJclXzCompressArchiveEx.ArchiveSubExtensions: string;
+begin
+  Result:= TJclXzCompressArchive.ArchiveSubExtensions;
+end;
+
+class function TJclXzCompressArchiveEx.ArchiveCLSID: TGUID;
+begin
+  Result:= TJclXzCompressArchive.ArchiveCLSID;
 end;
 
 { TJclSevenzipUpdateArchiveHelper }
