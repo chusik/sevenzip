@@ -5,7 +5,7 @@ unit SevenZipOpt;
 interface
 
 uses
-  Classes, SysUtils, Windows, IniFiles, JclCompression;
+  Classes, SysUtils, Windows, IniFiles, JclCompression, SevenZip;
 
 const
   cKilo = 1024;
@@ -127,6 +127,7 @@ type
     WordSize: PtrInt;
     SolidSize: PtrInt;
     ThreadCount: PtrInt;
+    ArchiveCLSID: PGUID;
   end;
 
 function GetNumberOfProcessors: LongWord;
@@ -138,17 +139,20 @@ procedure SaveConfiguration;
 var
   ConfigFile: AnsiString;
 
-var
-  PluginConfig: array[TArchiveFormat] of TFormatOptions =
+const
+  DefaultConfig: array[TArchiveFormat] of TFormatOptions =
   (
-   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA); Dictionary: cMega * 16; WordSize: 32; SolidSize: cMega * 2; ThreadCount: 2;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmBZip2); Dictionary: cKilo * 900; WordSize: 0; SolidSize: 0; ThreadCount: 2;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 1;),
-   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1;),
-   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA2); Dictionary: cMega * 16; WordSize: 32; SolidSize: 0; ThreadCount: 2;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 2;)
+   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA); Dictionary: cMega * 16; WordSize: 32; SolidSize: cMega * 2; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormat7z;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmBZip2); Dictionary: cKilo * 900; WordSize: 0; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatBZ2;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatGZip;),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatTar;),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatWim;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA2); Dictionary: cMega * 16; WordSize: 32; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatXz;),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatZip;)
   );
+
+var
+  PluginConfig: array[TArchiveFormat] of TFormatOptions;
 
 implementation
 
@@ -188,13 +192,13 @@ begin
     try
       for ArchiveFormat:= Low(TArchiveFormat) to High(TArchiveFormat) do
       begin
-        Section:= GetEnumName(TypeInfo(TArchiveFormat), Integer(ArchiveFormat));
-        PluginConfig[ArchiveFormat].Level:= Ini.ReadInteger(Section, 'Level', PluginConfig[ArchiveFormat].Level);
-        PluginConfig[ArchiveFormat].Method:= Ini.ReadInteger(Section, 'Method', PluginConfig[ArchiveFormat].Method);
-        PluginConfig[ArchiveFormat].Dictionary:= Ini.ReadInteger(Section, 'Dictionary', PluginConfig[ArchiveFormat].Dictionary);
-        PluginConfig[ArchiveFormat].WordSize:= Ini.ReadInteger(Section, 'WordSize', PluginConfig[ArchiveFormat].WordSize);
-        PluginConfig[ArchiveFormat].SolidSize:= Ini.ReadInteger(Section, 'SolidSize', PluginConfig[ArchiveFormat].SolidSize);
-        PluginConfig[ArchiveFormat].ThreadCount:= Ini.ReadInteger(Section, 'ThreadCount', PluginConfig[ArchiveFormat].ThreadCount);
+        Section:= GUIDToString(PluginConfig[ArchiveFormat].ArchiveCLSID^);
+        PluginConfig[ArchiveFormat].Level:= Ini.ReadInteger(Section, 'Level', DefaultConfig[ArchiveFormat].Level);
+        PluginConfig[ArchiveFormat].Method:= Ini.ReadInteger(Section, 'Method', DefaultConfig[ArchiveFormat].Method);
+        PluginConfig[ArchiveFormat].Dictionary:= Ini.ReadInteger(Section, 'Dictionary', DefaultConfig[ArchiveFormat].Dictionary);
+        PluginConfig[ArchiveFormat].WordSize:= Ini.ReadInteger(Section, 'WordSize', DefaultConfig[ArchiveFormat].WordSize);
+        PluginConfig[ArchiveFormat].SolidSize:= Ini.ReadInteger(Section, 'SolidSize', DefaultConfig[ArchiveFormat].SolidSize);
+        PluginConfig[ArchiveFormat].ThreadCount:= Ini.ReadInteger(Section, 'ThreadCount', DefaultConfig[ArchiveFormat].ThreadCount);
       end;
     finally
       Ini.Free;
@@ -216,7 +220,7 @@ begin
     try
       for ArchiveFormat:= Low(TArchiveFormat) to High(TArchiveFormat) do
       begin
-        Section:= GetEnumName(TypeInfo(TArchiveFormat), Integer(ArchiveFormat));
+        Section:= GUIDToString(PluginConfig[ArchiveFormat].ArchiveCLSID^);
         Ini.WriteInteger(Section, 'Level', PluginConfig[ArchiveFormat].Level);
         Ini.WriteInteger(Section, 'Method', PluginConfig[ArchiveFormat].Method);
         Ini.WriteInteger(Section, 'Dictionary', PluginConfig[ArchiveFormat].Dictionary);
@@ -232,6 +236,10 @@ begin
       MessageBox(0, PAnsiChar(E.Message), nil, MB_OK or MB_ICONERROR);
   end;
 end;
+
+initialization
+  CopyMemory(@PluginConfig[Low(PluginConfig)],
+             @DefaultConfig[Low(DefaultConfig)], SizeOf(PluginConfig));
 
 end.
 
