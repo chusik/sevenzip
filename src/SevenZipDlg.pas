@@ -94,7 +94,7 @@ var
   Method: TJclCompressionMethod;
 begin
   // Get level index
-  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETCURSEL, 0, 0);
+  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETCURSEL, 0, 0);
   Level:= TCompressionLevel(SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETITEMDATA, Index, 0));
   // Get method index
   Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETCURSEL, 0, 0);
@@ -453,11 +453,13 @@ begin
         if (HIWORD(wParam) = CBN_SELCHANGE) then
         begin
           UpdateMethod(hwndDlg);
+          SetDefaultOptions(hwndDlg);
         end;
       IDC_COMP_LEVEL:
         if (HIWORD(wParam) = CBN_SELCHANGE) then
         begin
           UpdateLevel(hwndDlg);
+          SetDefaultOptions(hwndDlg);
         end;
       IDCANCEL:
         EndDialog(hwndDlg, IDCANCEL);
