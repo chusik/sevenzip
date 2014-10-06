@@ -87,6 +87,108 @@ begin
   SendDlgItemMessage(hwndDlg, ItemID, CB_SETITEMDATA, Result, ItemData);
 end;
 
+procedure SetDefaultOptions(hwndDlg: HWND);
+var
+  Index: Integer;
+  Level: TCompressionLevel;
+  Method: TJclCompressionMethod;
+begin
+  // Get level index
+  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETCURSEL, 0, 0);
+  Level:= TCompressionLevel(SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETITEMDATA, Index, 0));
+  // Get method index
+  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETCURSEL, 0, 0);
+  Method:= TJclCompressionMethod(SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETITEMDATA, Index, 0));
+
+  case Method of
+  cmDeflate,
+  cmDeflate64:
+     begin
+       case Level of
+       clFastest,
+       clFast,
+       clNormal:
+         SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
+       clMaximum:
+         SetComboBox(hwndDlg, IDC_COMP_WORD, 64);
+       clUltra:
+         SetComboBox(hwndDlg, IDC_COMP_WORD, 128);
+       end;
+       SendDlgItemMessage(hwndDlg, IDC_COMP_DICT, CB_SETCURSEL, 0, 0);
+     end;
+  cmBZip2:
+     begin
+       case Level of
+       clFastest:
+         SetComboBox(hwndDlg, IDC_COMP_DICT, 100 * cKilo);
+       clFast:
+         SetComboBox(hwndDlg, IDC_COMP_DICT, 500 * cKilo);
+       clNormal,
+       clMaximum,
+       clUltra:
+         SetComboBox(hwndDlg, IDC_COMP_DICT, 900 * cKilo);
+       end;
+     end;
+  cmLZMA,
+  cmLZMA2:
+     begin
+       case Level of
+       clFastest:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, 64 * cKilo);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
+         end;
+       clFast:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, cMega);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
+         end;
+       clNormal:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, 16 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
+         end;
+       clMaximum:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, 32 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 64);
+         end;
+       clUltra:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, 64 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 64);
+         end;
+       end;
+     end;
+  cmPPMd:
+     begin
+       case Level of
+        clFastest,
+        clFast:
+          begin
+            SetComboBox(hwndDlg, IDC_COMP_DICT, 4 * cMega);
+            SetComboBox(hwndDlg, IDC_COMP_WORD, 4);
+          end;
+       clNormal:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, 16 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 6);
+         end;
+       clMaximum:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, 64 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 16);
+         end;
+       clUltra:
+         begin
+           SetComboBox(hwndDlg, IDC_COMP_DICT, 192 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
+         end;
+       end;
+     end;
+  end;
+end;
+
 procedure UpdateSolid(hwndDlg: HWND);
 var
   Index: Integer;
