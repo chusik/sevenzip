@@ -169,7 +169,7 @@ var
 implementation
 
 uses
-  TypInfo, ActiveX, StrUtils;
+  ActiveX;
 
 function GetNumberOfProcessors: LongWord;
 var
@@ -193,30 +193,13 @@ begin
     Result:= IntToStr(ASize);
 end;
 
-procedure SetSevenZipMethod(AJclArchive: IInterface);
-var
-  PropName: PWideChar;
-  PropValue: TPropVariant;
-  OutArchive: IOutArchive;
-  Method: TJclCompressionMethod;
-  PropertySetter: SevenZip.ISetProperties;
-begin
-  OutArchive:= (AJclArchive as TJclSevenzipCompressArchive).OutArchive;
-  if Supports(OutArchive, SevenZip.ISetProperties, PropertySetter) and Assigned(PropertySetter) then
-  begin
-    PropName:= '0';
-    PropValue.vt := VT_BSTR;
-    Method:= TJclCompressionMethod(PluginConfig[afSevenZip].Method);
-    PropValue.bstrVal := SysAllocString(PWideChar(MethodName[Method]));
-    SevenZipCheck(PropertySetter.SetProperties(@PropName, @PropValue, 1));
-  end;
-end;
-
-procedure SetArchiveCustom(AJclArchive: IInterface; AOptions: WideString);
+procedure SetArchiveCustom(AJclArchive: IInterface; AFormat: TArchiveFormat);
 var
   Index: Integer;
   Start: Integer = 1;
+  Parameters: WideString;
   OutArchive: IOutArchive;
+  Method: TJclCompressionMethod;
   PropNames: array of PWideChar;
   PropValues: array of TPropVariant;
   PropertySetter: SevenZip.ISetProperties;
@@ -227,6 +210,15 @@ var
     PropNames[High(PropNames)] := Name;
     SetLength(PropValues, Length(PropValues)+1);
     PropValues[High(PropValues)] := Value;
+  end;
+
+  procedure AddCardinalProperty(const Name: PWideChar; Value: Cardinal);
+  var
+    PropValue: TPropVariant;
+  begin
+    PropValue.vt := VT_UI4;
+    PropValue.ulVal := Value;
+    AddProperty(Name, PropValue);
   end;
 
   procedure AddWideStringProperty(const Name: PWideChar; const Value: WideString);
@@ -243,7 +235,7 @@ var
     Name: PWideChar;
     Option, Value: WideString;
   begin
-    Option:= Copy(AOptions, Start, Finish - Start);
+    Option:= Copy(Parameters, Start, Finish - Start);
     Start:= Pos('=', Option);
     if Start = 0 then
     begin
@@ -262,16 +254,35 @@ begin
   OutArchive:= (AJclArchive as TJclSevenzipCompressArchive).OutArchive;
   if Supports(OutArchive, SevenZip.ISetProperties, PropertySetter) and Assigned(PropertySetter) then
   begin
-    // Parse additional parameters
-    for Index:= 1 to Length(AOptions) do
-    begin
-      if AOptions[Index] = #32 then
-      begin
-        AddOption(Index);
-        Start:= Index + 1;
-      end;
+    // Set word size parameter
+    Method:= TJclCompressionMethod(PluginConfig[AFormat].Method);
+    case Method of
+      cmLZMA, cmLZMA2,
+      cmDeflate, cmDeflate64:
+        AddCardinalProperty('fb', PluginConfig[AFormat].WordSize);
+      cmPPMd:
+        AddCardinalProperty('o', PluginConfig[AFormat].WordSize);
     end;
-    AddOption(MaxInt);
+    Parameters:= PluginConfig[AFormat].Parameters;
+    // Set 7-zip compression method
+    if IsEqualGUID(CLSID_CFormat7z, PluginConfig[AFormat].ArchiveCLSID^) then
+    begin
+      Parameters:= Parameters + #32 + '0=' + MethodName[Method];
+    end;
+    // Parse additional parameters
+    Parameters:= Trim(Parameters);
+    if Length(Parameters) > 0 then
+    begin
+      for Index:= 1 to Length(Parameters) do
+      begin
+        if Parameters[Index] = #32 then
+        begin
+          AddOption(Index);
+          Start:= Index + 1;
+        end;
+      end;
+      AddOption(MaxInt);
+    end;
     if Length(PropNames) > 0 then
       SevenZipCheck(PropertySetter.SetProperties(@PropNames[0], @PropValues[0], Length(PropNames)));
   end;
@@ -307,11 +318,8 @@ begin
       if Supports(AJclArchive, IJclArchiveNumberOfThreads, MultiThreadStrategy) and Assigned(MultiThreadStrategy) then
         MultiThreadStrategy.SetNumberOfThreads(PluginConfig[Index].ThreadCount);
 
-      if IsEqualGUID(ArchiveCLSID, CLSID_CFormat7z) then SetSevenZipMethod(AJclArchive);
-
-      if Length(PluginConfig[Index].Parameters) > 0 then
       try
-        SetArchiveCustom(AJclArchive, PluginConfig[Index].Parameters);
+        SetArchiveCustom(AJclArchive, Index);
       except
         on E: Exception do
           Messagebox(0, PAnsiChar(E.Message), nil, MB_OK or MB_ICONERROR);

@@ -24,6 +24,7 @@ const
   IDC_COMP_FORMAT = 1076;
   IDC_COMP_METHOD = 1078;
   IDC_COMP_LEVEL = 1074;
+  IDC_VOLUME_SIZE = 1077;
   IDC_COMP_DICT = 1079;
   IDC_COMP_WORD = 1080;
   IDC_COMP_SOLID = 1081;
@@ -476,6 +477,7 @@ begin
   case uMsg of
     WM_INITDIALOG:
     begin
+      EnableWindow(GetDlgItem(hwndDlg, IDC_VOLUME_SIZE), False);
       for Index:= Low(ArchiveExtension) to High(ArchiveExtension) do
       ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, ArchiveExtension[Index], PtrInt(Index));
       SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_SETCURSEL, 0, 0);
