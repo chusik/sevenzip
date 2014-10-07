@@ -128,6 +128,7 @@ type
     SolidSize: PtrInt;
     ThreadCount: PtrInt;
     ArchiveCLSID: PGUID;
+    Parameters: WideString;
   end;
 
 function GetNumberOfProcessors: LongWord;
@@ -146,15 +147,20 @@ const
   ('7z', 'bzip2', 'gzip', 'tar', 'wim', 'xz', 'zip');
 
 const
+  MethodName: array [TJclCompressionMethod] of WideString =
+  (kCopyMethodName, kDeflateMethodName, kDeflate64MethodName,
+   kBZip2MethodName, kLZMAMethodName, kLZMA2MethodName, kPPMdMethodName);
+
+const
   DefaultConfig: array[TArchiveFormat] of TFormatOptions =
   (
-   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA); Dictionary: cMega * 16; WordSize: 32; SolidSize: cMega * 2; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormat7z;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmBZip2); Dictionary: cKilo * 900; WordSize: 0; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatBZ2;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatGZip;),
-   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatTar;),
-   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatWim;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA2); Dictionary: cMega * 16; WordSize: 32; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatXz;),
-   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatZip;)
+   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA); Dictionary: cMega * 16; WordSize: 32; SolidSize: cMega * 2; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormat7z; Parameters: '';),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmBZip2); Dictionary: cKilo * 900; WordSize: 0; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatBZ2; Parameters: '';),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatGZip; Parameters: '';),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatTar; Parameters: '';),
+   (Level: PtrInt(clStore); Method: 0; Dictionary: 0; WordSize: 0; SolidSize: 0; ThreadCount: 1; ArchiveCLSID: @CLSID_CFormatWim; Parameters: '';),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA2); Dictionary: cMega * 16; WordSize: 32; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatXz; Parameters: '';),
+   (Level: PtrInt(clNormal); Method: PtrInt(cmDeflate); Dictionary: cKilo * 32; WordSize: 32; SolidSize: 0; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormatZip; Parameters: '';)
   );
 
 var
@@ -163,7 +169,7 @@ var
 implementation
 
 uses
-  TypInfo;
+  TypInfo, ActiveX, StrUtils;
 
 function GetNumberOfProcessors: LongWord;
 var
@@ -185,6 +191,90 @@ begin
     Result:= IntToStr(ASize div cKilo) + 'Kb'
   else
     Result:= IntToStr(ASize);
+end;
+
+procedure SetSevenZipMethod(AJclArchive: IInterface);
+var
+  PropName: PWideChar;
+  PropValue: TPropVariant;
+  OutArchive: IOutArchive;
+  Method: TJclCompressionMethod;
+  PropertySetter: SevenZip.ISetProperties;
+begin
+  OutArchive:= (AJclArchive as TJclSevenzipCompressArchive).OutArchive;
+  if Supports(OutArchive, SevenZip.ISetProperties, PropertySetter) and Assigned(PropertySetter) then
+  begin
+    PropName:= '0';
+    PropValue.vt := VT_BSTR;
+    Method:= TJclCompressionMethod(PluginConfig[afSevenZip].Method);
+    PropValue.bstrVal := SysAllocString(PWideChar(MethodName[Method]));
+    SevenZipCheck(PropertySetter.SetProperties(@PropName, @PropValue, 1));
+  end;
+end;
+
+procedure SetArchiveCustom(AJclArchive: IInterface; AOptions: WideString);
+var
+  Index: Integer;
+  Start: Integer = 1;
+  OutArchive: IOutArchive;
+  PropNames: array of PWideChar;
+  PropValues: array of TPropVariant;
+  PropertySetter: SevenZip.ISetProperties;
+
+  procedure AddProperty(const Name: PWideChar; const Value: TPropVariant);
+  begin
+    SetLength(PropNames, Length(PropNames)+1);
+    PropNames[High(PropNames)] := Name;
+    SetLength(PropValues, Length(PropValues)+1);
+    PropValues[High(PropValues)] := Value;
+  end;
+
+  procedure AddWideStringProperty(const Name: PWideChar; const Value: WideString);
+  var
+    PropValue: TPropVariant;
+  begin
+    PropValue.vt := VT_BSTR;
+    PropValue.bstrVal := SysAllocString(PWideChar(Value));
+    AddProperty(Name, PropValue);
+  end;
+
+  procedure AddOption(Finish: Integer);
+  var
+    Name: PWideChar;
+    Option, Value: WideString;
+  begin
+    Option:= Copy(AOptions, Start, Finish - Start);
+    Start:= Pos('=', Option);
+    if Start = 0 then
+    begin
+      Name:= SysAllocString(PWideChar(Option));
+      AddProperty(Name, TPropVariant(NULL));
+    end
+    else begin
+      Value:= Copy(Option, Start + 1, MaxInt);
+      SetLength(Option, Start - 1);
+      Name:= SysAllocString(PWideChar(Option));
+      AddWideStringProperty(Name, Value);
+    end;
+  end;
+
+begin
+  OutArchive:= (AJclArchive as TJclSevenzipCompressArchive).OutArchive;
+  if Supports(OutArchive, SevenZip.ISetProperties, PropertySetter) and Assigned(PropertySetter) then
+  begin
+    // Parse additional parameters
+    for Index:= 1 to Length(AOptions) do
+    begin
+      if AOptions[Index] = #32 then
+      begin
+        AddOption(Index);
+        Start:= Index + 1;
+      end;
+    end;
+    AddOption(MaxInt);
+    if Length(PropNames) > 0 then
+      SevenZipCheck(PropertySetter.SetProperties(@PropNames[0], @PropValues[0], Length(PropNames)));
+  end;
 end;
 
 procedure SetArchiveOptions(AJclArchive: IInterface);
@@ -217,6 +307,16 @@ begin
       if Supports(AJclArchive, IJclArchiveNumberOfThreads, MultiThreadStrategy) and Assigned(MultiThreadStrategy) then
         MultiThreadStrategy.SetNumberOfThreads(PluginConfig[Index].ThreadCount);
 
+      if IsEqualGUID(ArchiveCLSID, CLSID_CFormat7z) then SetSevenZipMethod(AJclArchive);
+
+      if Length(PluginConfig[Index].Parameters) > 0 then
+      try
+        SetArchiveCustom(AJclArchive, PluginConfig[Index].Parameters);
+      except
+        on E: Exception do
+          Messagebox(0, PAnsiChar(E.Message), nil, MB_OK or MB_ICONERROR);
+      end;
+
       Exit;
     end;
   end;
@@ -240,6 +340,7 @@ begin
         PluginConfig[ArchiveFormat].WordSize:= Ini.ReadInteger(Section, 'WordSize', DefaultConfig[ArchiveFormat].WordSize);
         PluginConfig[ArchiveFormat].SolidSize:= Ini.ReadInteger(Section, 'SolidSize', DefaultConfig[ArchiveFormat].SolidSize);
         PluginConfig[ArchiveFormat].ThreadCount:= Ini.ReadInteger(Section, 'ThreadCount', DefaultConfig[ArchiveFormat].ThreadCount);
+        PluginConfig[ArchiveFormat].Parameters:= Ini.ReadString(Section, 'Parameters', DefaultConfig[ArchiveFormat].Parameters);
       end;
     finally
       Ini.Free;
@@ -269,6 +370,7 @@ begin
         Ini.WriteInteger(Section, 'WordSize', PluginConfig[ArchiveFormat].WordSize);
         Ini.WriteInteger(Section, 'SolidSize', PluginConfig[ArchiveFormat].SolidSize);
         Ini.WriteInteger(Section, 'ThreadCount', PluginConfig[ArchiveFormat].ThreadCount);
+        Ini.WriteString(Section, 'Parameters', PluginConfig[ArchiveFormat].Parameters);
       end;
     finally
       Ini.Free;

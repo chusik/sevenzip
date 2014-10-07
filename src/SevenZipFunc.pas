@@ -278,6 +278,8 @@ begin
         end;
       end;
 
+      SetArchiveOptions(Archive);
+
       if (Archive is TJclUpdateArchive) then
       try
         TJclUpdateArchive(Archive).ListFiles;

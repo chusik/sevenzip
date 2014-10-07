@@ -29,6 +29,7 @@ const
   IDC_COMP_SOLID = 1081;
   IDC_COMP_THREAD = 1082;
   IDC_MAX_THREAD = 1083;
+  IDC_PARAMETERS = 1091;
 
 function GetComboBox(hwndDlg: HWND; ItemID: Integer): PtrInt;
 var
@@ -56,6 +57,7 @@ end;
 procedure SaveArchiver(hwndDlg: HWND);
 var
   Format: TArchiveFormat;
+  Parameters: array[0..MAX_PATH] of WideChar;
 begin
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
   PluginConfig[Format].Level:= GetComboBox(hwndDlg, IDC_COMP_LEVEL);
@@ -64,6 +66,8 @@ begin
   PluginConfig[Format].WordSize:= GetComboBox(hwndDlg, IDC_COMP_WORD);
   PluginConfig[Format].SolidSize:= GetComboBox(hwndDlg, IDC_COMP_SOLID);
   PluginConfig[Format].ThreadCount:= GetComboBox(hwndDlg, IDC_COMP_THREAD);
+  GetDlgItemTextW(hwndDlg, IDC_PARAMETERS, Parameters, MAX_PATH);
+  PluginConfig[Format].Parameters:= Parameters;
 
   SaveConfiguration;
 end;
@@ -462,6 +466,7 @@ begin
   SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
   SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
   SetComboBox(hwndDlg, IDC_COMP_THREAD, PluginConfig[Format].ThreadCount);
+  SetDlgItemTextW(hwndDlg, IDC_PARAMETERS, PWideChar(PluginConfig[Format].Parameters));
 end;
 
 function DialogProc(hwndDlg: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): INT_PTR; stdcall;
