@@ -133,6 +133,8 @@ type
 function GetNumberOfProcessors: LongWord;
 function FormatFileSize(ASize: Int64): UTF8String;
 
+procedure SetArchiveOptions(AJclArchive: IInterface);
+
 procedure LoadConfiguration;
 procedure SaveConfiguration;
 
@@ -185,6 +187,41 @@ begin
     Result:= IntToStr(ASize);
 end;
 
+procedure SetArchiveOptions(AJclArchive: IInterface);
+var
+  ArchiveCLSID: TGUID;
+  Index: TArchiveFormat;
+  Solid: IJclArchiveSolid;
+  DictionarySize: IJclArchiveDictionarySize;
+  CompressionLevel: IJclArchiveCompressionLevel;
+  MultiThreadStrategy: IJclArchiveNumberOfThreads;
+  CompressionMethod: IJclArchiveCompressionMethod;
+begin
+  ArchiveCLSID:= (AJclArchive as TJclSevenzipCompressArchive).ArchiveCLSID;
+  for Index:= Low(PluginConfig) to High(PluginConfig) do
+  begin
+    if IsEqualGUID(ArchiveCLSID, PluginConfig[Index].ArchiveCLSID^) then
+    begin
+      if Supports(AJclArchive, IJclArchiveCompressionMethod, CompressionMethod) and Assigned(CompressionMethod) then
+        CompressionMethod.SetCompressionMethod(TJclCompressionMethod(PluginConfig[Index].Method));
+
+      if Supports(AJclArchive, IJclArchiveCompressionLevel, CompressionLevel) and Assigned(CompressionLevel) then
+        CompressionLevel.SetCompressionLevel(PluginConfig[Index].Level);
+
+      if Supports(AJclArchive, IJclArchiveDictionarySize, DictionarySize) and Assigned(DictionarySize) then
+        DictionarySize.SetDictionarySize(PluginConfig[Index].Dictionary);
+
+      if Supports(AJclArchive, IJclArchiveSolid, Solid) and Assigned(Solid) then
+        Solid.SetSolidBlockSize(PluginConfig[Index].SolidSize);
+
+      if Supports(AJclArchive, IJclArchiveNumberOfThreads, MultiThreadStrategy) and Assigned(MultiThreadStrategy) then
+        MultiThreadStrategy.SetNumberOfThreads(PluginConfig[Index].ThreadCount);
+
+      Exit;
+    end;
+  end;
+end;
+
 procedure LoadConfiguration;
 var
   Ini: TIniFile;
@@ -225,6 +262,7 @@ begin
       for ArchiveFormat:= Low(TArchiveFormat) to High(TArchiveFormat) do
       begin
         Section:= GUIDToString(PluginConfig[ArchiveFormat].ArchiveCLSID^);
+        Ini.WriteString(Section, 'Format', ArchiveExtension[ArchiveFormat]);
         Ini.WriteInteger(Section, 'Level', PluginConfig[ArchiveFormat].Level);
         Ini.WriteInteger(Section, 'Method', PluginConfig[ArchiveFormat].Method);
         Ini.WriteInteger(Section, 'Dictionary', PluginConfig[ArchiveFormat].Dictionary);
