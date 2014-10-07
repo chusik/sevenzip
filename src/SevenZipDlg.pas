@@ -64,6 +64,8 @@ begin
   PluginConfig[Format].WordSize:= GetComboBox(hwndDlg, IDC_COMP_WORD);
   PluginConfig[Format].SolidSize:= GetComboBox(hwndDlg, IDC_COMP_SOLID);
   PluginConfig[Format].ThreadCount:= GetComboBox(hwndDlg, IDC_COMP_THREAD);
+
+  SaveConfiguration;
 end;
 
 function ComboBoxAdd(hwndDlg: HWND; ItemID: Integer; ItemText: UTF8String; ItemData: PtrInt): Integer;
@@ -496,6 +498,11 @@ begin
         begin
           UpdateLevel(hwndDlg);
           SetDefaultOptions(hwndDlg);
+        end;
+      IDOK:
+        begin
+          SaveArchiver(hwndDlg);
+          EndDialog(hwndDlg, IDOK);
         end;
       IDCANCEL:
         EndDialog(hwndDlg, IDCANCEL);

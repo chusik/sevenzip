@@ -405,6 +405,8 @@ begin
   begin
     MessageBoxW(0, PWideChar(UTF8Decode(rsSevenZipLoadError)), 'SevenZip', MB_OK or MB_ICONERROR);
   end;
+  // Load plugin configuration
+  LoadConfiguration;
 end;
 
 procedure ConfigurePacker(Parent: WcxPlugin.HWND; DllInstance: THandle); stdcall;
