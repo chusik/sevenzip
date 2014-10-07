@@ -20,6 +20,7 @@ const
   IDC_ENCRYPT_HEADER = 0;
 
 const
+  IDC_APPLY_BUTTON = 9;
   IDC_COMP_FORMAT = 1076;
   IDC_COMP_METHOD = 1078;
   IDC_COMP_LEVEL = 1074;
@@ -50,19 +51,6 @@ begin
       Exit;
     end;
   end;
-end;
-
-procedure LoadArchiver(hwndDlg: HWND);
-var
-  Format: TArchiveFormat;
-begin
-  Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
-  SetComboBox(hwndDlg, IDC_COMP_LEVEL, PluginConfig[Format].Level);
-  SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
-  SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
-  SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
-  SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
-  SetComboBox(hwndDlg, IDC_COMP_THREAD, PluginConfig[Format].ThreadCount);
 end;
 
 procedure SaveArchiver(hwndDlg: HWND);
@@ -216,13 +204,12 @@ begin
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
   if Format in [afSevenZip] then
   begin
-    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, 'Non-solid', 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, rsSolidBlockNonSolid, 0);
     for Index:= Low(SolidBlock) to High(SolidBlock) do
     begin
       ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, FormatFileSize(Int64(SolidBlock[Index]) * cKilo), PtrInt(SolidBlock[Index]));
     end;
-    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, 'Solid', 0);
-    SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
+    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, rsSolidBlockSolid, 0);
   end;
 end;
 
@@ -233,11 +220,11 @@ var
   wsMaxThread: WideString;
   dwNumberOfProcessors: DWORD;
 begin
+  SendDlgItemMessage(hwndDlg, IDC_COMP_THREAD, CB_RESETCONTENT, 0, 0);
   dwNumberOfProcessors:= GetNumberOfProcessors;
   dwMaxThread:= dwNumberOfProcessors * 2;
   if dwMaxThread > dwAlgoThreadMax then dwMaxThread:= dwAlgoThreadMax;
   if dwAlgoThreadMax < dwNumberOfProcessors then dwNumberOfProcessors:= dwAlgoThreadMax;
-  SendDlgItemMessage(hwndDlg, IDC_COMP_THREAD, CB_RESETCONTENT, 0, 0);
   for Index:= 1 to dwMaxThread do
   begin
     ComboBoxAdd(hwndDlg, IDC_COMP_THREAD, IntToStr(Index), 0);
@@ -256,13 +243,12 @@ begin
   // Clear comboboxes
   SendDlgItemMessage(hwndDlg, IDC_COMP_DICT, CB_RESETCONTENT, 0, 0);
   SendDlgItemMessage(hwndDlg, IDC_COMP_WORD, CB_RESETCONTENT, 0, 0);
-  SendDlgItemMessage(hwndDlg, IDC_COMP_SOLID, CB_RESETCONTENT, 0, 0);
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
   EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_DICT), not (Format in [afTar, afWim]));
-  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_WORD), Format in [afSevenZip, afGzip, afXz, afZip]);
   // Get method index
   Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETCURSEL, 0, 0);
   Method:= TJclCompressionMethod(SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_GETITEMDATA, Index, 0));
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_WORD), (Format in [afSevenZip, afGzip, afXz, afZip]) and (Method <> cmBZip2));
   case Method of
   cmDeflate:
     begin
@@ -325,9 +311,6 @@ begin
       UpdateThread(hwndDlg, 1);
     end;
   end;
-  UpdateSolid(hwndDlg);
-  SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
-  SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
 end;
 
 procedure UpdateLevel(hwndDlg: HWND);
@@ -433,9 +416,23 @@ begin
      ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'PPMd', PtrInt(cmPPMd));
    end;
   end;
+end;
+
+procedure SelectFormat(hwndDlg: HWND);
+var
+  Format: TArchiveFormat;
+begin
+  UpdateFormat(hwndDlg);
+  Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
   SetComboBox(hwndDlg, IDC_COMP_LEVEL, PluginConfig[Format].Level);
   SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
   UpdateMethod(hwndDlg);
+  UpdateLevel(hwndDlg);
+  UpdateSolid(hwndDlg);
+  SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
+  SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
+  SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
+  SetComboBox(hwndDlg, IDC_COMP_THREAD, PluginConfig[Format].ThreadCount);
 end;
 
 function DialogProc(hwndDlg: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): INT_PTR; stdcall;
@@ -453,8 +450,7 @@ begin
       ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'xz', PtrInt(afXz));
       ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'zip', PtrInt(afZip));
       SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_SETCURSEL, 0, 0);
-      UpdateFormat(hwndDlg);
-      UpdateMethod(hwndDlg);
+      SelectFormat(hwndDlg);
       Result:= 1;
     end;
     WM_COMMAND:
@@ -464,7 +460,7 @@ begin
         begin
           if (HIWORD(wParam) = CBN_SELCHANGE) then
           begin
-            UpdateFormat(hwndDlg);
+            SelectFormat(hwndDlg);
           end;
         end;
       IDC_COMP_METHOD:
@@ -481,7 +477,7 @@ begin
         end;
       IDCANCEL:
         EndDialog(hwndDlg, IDCANCEL);
-      9:
+      IDC_APPLY_BUTTON:
         SaveArchiver(hwndDlg);
       end;
     end;

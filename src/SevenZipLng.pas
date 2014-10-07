@@ -18,6 +18,9 @@ resourcestring
   rsCompressionLevelMaximum = 'Maximun';
   rsCompressionLevelUltra = 'Ultra';
 
+  rsSolidBlockSolid = 'Solid';
+  rsSolidBlockNonSolid = 'Non-solid';
+
 implementation
 
 end.

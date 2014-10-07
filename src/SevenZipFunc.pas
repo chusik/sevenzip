@@ -409,7 +409,7 @@ end;
 
 procedure ConfigurePacker(Parent: WcxPlugin.HWND; DllInstance: THandle); stdcall;
 begin
-  // ShowConfigurationDialog(Parent);
+  ShowConfigurationDialog(Parent);
 end;
 
 { TSevenZipUpdate }
