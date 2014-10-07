@@ -140,6 +140,10 @@ var
   ConfigFile: AnsiString;
 
 const
+  ArchiveExtension: array[TArchiveFormat] of WideString =
+  ('7z', 'bzip2', 'gzip', 'tar', 'wim', 'xz', 'zip');
+
+const
   DefaultConfig: array[TArchiveFormat] of TFormatOptions =
   (
    (Level: PtrInt(clNormal); Method: PtrInt(cmLZMA); Dictionary: cMega * 16; WordSize: 32; SolidSize: cMega * 2; ThreadCount: 2; ArchiveCLSID: @CLSID_CFormat7z;),

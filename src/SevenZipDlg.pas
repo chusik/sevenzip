@@ -437,18 +437,13 @@ end;
 
 function DialogProc(hwndDlg: HWND; uMsg: UINT; wParam: WPARAM; lParam: LPARAM): INT_PTR; stdcall;
 var
-  I, Index: Integer;
+  Index: TArchiveFormat;
 begin
   case uMsg of
     WM_INITDIALOG:
     begin
-      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, '7z', PtrInt(afSevenZip));
-      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'bzip2', PtrInt(afBzip2));
-      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'gzip', PtrInt(afGzip));
-      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'tar', PtrInt(afTar));
-      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'wim', PtrInt(afWim));
-      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'xz', PtrInt(afXz));
-      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, 'zip', PtrInt(afZip));
+      for Index:= Low(ArchiveExtension) to High(ArchiveExtension) do
+      ComboBoxAdd(hwndDlg, IDC_COMP_FORMAT, ArchiveExtension[Index], PtrInt(Index));
       SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_SETCURSEL, 0, 0);
       SelectFormat(hwndDlg);
       Result:= 1;
