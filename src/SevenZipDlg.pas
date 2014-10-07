@@ -313,22 +313,50 @@ begin
   end;
 end;
 
-procedure UpdateLevel(hwndDlg: HWND);
+procedure FillMethod(hwndDlg: HWND);
 var
-  Index: Integer;
   Format: TArchiveFormat;
-  Level: TCompressionLevel;
 begin
+  // Clear combobox
+  SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_RESETCONTENT, 0, 0);
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
-  // Get Level index
-  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETCURSEL, 0, 0);
-  Level:= TCompressionLevel(SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETITEMDATA, Index, 0));
   case Format of
   afSevenZip:
-    case Level of
-      clStore:
-      ;
-    end;
+   begin
+     // Fill compression method
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA', PtrInt(cmLZMA));
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA2', PtrInt(cmLZMA2));
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'PPMd', PtrInt(cmPPMd));
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'BZip2', PtrInt(cmBZip2));
+     SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
+   end;
+  afBzip2:
+   begin
+     // Fill compression method
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'BZip2', PtrInt(cmBZip2));
+     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
+   end;
+  afGzip:
+   begin
+     // Fill compression method
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'Deflate', PtrInt(cmDeflate));
+     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
+   end;
+  afXz:
+   begin
+     // Fill compression method
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA2', PtrInt(cmLZMA2));
+     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
+   end;
+  afZip:
+   begin
+     // Fill compression method
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'Deflate', PtrInt(cmDeflate));
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'Deflate64', PtrInt(cmDeflate64));
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'BZip2', PtrInt(cmBZip2));
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA', PtrInt(cmLZMA));
+     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'PPMd', PtrInt(cmPPMd));
+   end;
   end;
 end;
 
@@ -339,7 +367,6 @@ var
 begin
   // Clear comboboxes
   SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_RESETCONTENT, 0, 0);
-  SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_RESETCONTENT, 0, 0);
   // Get format index
   Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_GETCURSEL, 0, 0);
   Format:= TArchiveFormat(SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_GETITEMDATA, Index, 0));
@@ -378,43 +405,43 @@ begin
     // Fill compression level
     ComboBoxAdd(hwndDlg, IDC_COMP_LEVEL, rsCompressionLevelStore, PtrInt(clStore));
   end;
-  case Format of
-  afSevenZip:
-   begin
-     // Fill compression method
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA', PtrInt(cmLZMA));
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA2', PtrInt(cmLZMA2));
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'PPMd', PtrInt(cmPPMd));
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'BZip2', PtrInt(cmBZip2));
-     SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
-   end;
-  afBzip2:
-   begin
-     // Fill compression method
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'BZip2', PtrInt(cmBZip2));
-     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
-   end;
-  afGzip:
-   begin
-     // Fill compression method
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'Deflate', PtrInt(cmDeflate));
-     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
-   end;
-  afXz:
-   begin
-     // Fill compression method
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA2', PtrInt(cmLZMA2));
-     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
-   end;
-  afZip:
-   begin
-     // Fill compression method
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'Deflate', PtrInt(cmDeflate));
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'Deflate64', PtrInt(cmDeflate64));
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'BZip2', PtrInt(cmBZip2));
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'LZMA', PtrInt(cmLZMA));
-     ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, 'PPMd', PtrInt(cmPPMd));
-   end;
+  FillMethod(hwndDlg);
+end;
+
+procedure UpdateLevel(hwndDlg: HWND);
+var
+  Index: Integer;
+  Format: TArchiveFormat;
+  Level: TCompressionLevel;
+begin
+  Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
+  // Get Level index
+  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETCURSEL, 0, 0);
+  Level:= TCompressionLevel(SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETITEMDATA, Index, 0));
+
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_METHOD), Level <> clStore);
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_DICT), Level <> clStore);
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_WORD), Level <> clStore);
+  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_SOLID), Level <> clStore);
+
+  if Level = clStore then
+  begin
+    SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_RESETCONTENT, 0, 0);
+    SendDlgItemMessage(hwndDlg, IDC_COMP_DICT, CB_RESETCONTENT, 0, 0);
+    SendDlgItemMessage(hwndDlg, IDC_COMP_WORD, CB_RESETCONTENT, 0, 0);
+    SendDlgItemMessage(hwndDlg, IDC_COMP_SOLID, CB_RESETCONTENT, 0, 0);
+    UpdateThread(hwndDlg, 1);
+  end
+  else begin
+    FillMethod(hwndDlg);
+    SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
+    UpdateMethod(hwndDlg);
+    UpdateSolid(hwndDlg);
+    EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_SOLID), Format = afSevenZip);
+    SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
+    SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
+    SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
+    SetComboBox(hwndDlg, IDC_COMP_THREAD, PluginConfig[Format].ThreadCount);
   end;
 end;
 

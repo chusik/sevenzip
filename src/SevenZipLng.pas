@@ -15,7 +15,7 @@ resourcestring
   rsCompressionLevelFastest = 'Fastest';
   rsCompressionLevelFast = 'Fast';
   rsCompressionLevelNormal = 'Normal';
-  rsCompressionLevelMaximum = 'Maximun';
+  rsCompressionLevelMaximum = 'Maximum';
   rsCompressionLevelUltra = 'Ultra';
 
   rsSolidBlockSolid = 'Solid';
