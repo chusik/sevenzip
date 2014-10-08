@@ -421,7 +421,7 @@ begin
   FillMethod(hwndDlg);
 end;
 
-procedure UpdateLevel(hwndDlg: HWND);
+procedure UpdateLevel(hwndDlg: HWND; First: Boolean);
 var
   Index: Integer;
   Format: TArchiveFormat;
@@ -446,7 +446,8 @@ begin
     SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
     UpdateThread(hwndDlg, 1);
   end
-  else begin
+  else if not First then
+  begin
     FillMethod(hwndDlg);
     PluginConfig[Format].Method:= DefaultConfig[Format].Method;
     SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
@@ -465,7 +466,7 @@ begin
   SetComboBox(hwndDlg, IDC_COMP_LEVEL, PluginConfig[Format].Level);
   SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
   UpdateMethod(hwndDlg);
-  UpdateLevel(hwndDlg);
+  UpdateLevel(hwndDlg, True);
   UpdateSolid(hwndDlg);
   SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
   SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
@@ -507,7 +508,7 @@ begin
       IDC_COMP_LEVEL:
         if (HIWORD(wParam) = CBN_SELCHANGE) then
         begin
-          UpdateLevel(hwndDlg);
+          UpdateLevel(hwndDlg, False);
           SetDefaultOptions(hwndDlg);
         end;
       IDOK:
