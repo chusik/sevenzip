@@ -120,19 +120,19 @@ begin
        clFastest:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 100 * cKilo);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 8 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 8 * cKilo);
          end;
        clFast:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 500 * cKilo);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 32 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 32 * cKilo);
          end;
        clNormal,
        clMaximum,
        clUltra:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 900 * cKilo);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 64 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 64 * cKilo);
          end;
        end;
      end;
@@ -144,31 +144,31 @@ begin
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 64 * cKilo);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 8 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 8 * cKilo);
          end;
        clFast:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, cMega);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 128 * cMega);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 128 * cKilo);
          end;
        clNormal:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 16 * cMega);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 2 * cGiga);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 2 * cMega);
          end;
        clMaximum:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 32 * cMega);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 64);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cGiga);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cMega);
          end;
        clUltra:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 64 * cMega);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 64);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cGiga);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cMega);
          end;
        end;
      end;
@@ -180,25 +180,25 @@ begin
           begin
             SetComboBox(hwndDlg, IDC_COMP_DICT, 4 * cMega);
             SetComboBox(hwndDlg, IDC_COMP_WORD, 4);
-            SetComboBox(hwndDlg, IDC_COMP_SOLID, 512 * cMega);
+            SetComboBox(hwndDlg, IDC_COMP_SOLID, 512 * cKilo);
           end;
        clNormal:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 16 * cMega);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 6);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 2 * cGiga);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 2 * cMega);
          end;
        clMaximum:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 64 * cMega);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 16);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cGiga);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cMega);
          end;
        clUltra:
          begin
            SetComboBox(hwndDlg, IDC_COMP_DICT, 192 * cMega);
            SetComboBox(hwndDlg, IDC_COMP_WORD, 32);
-           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cGiga);
+           SetComboBox(hwndDlg, IDC_COMP_SOLID, 4 * cMega);
          end;
        end;
      end;
