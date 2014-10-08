@@ -13,6 +13,10 @@ const
   cGiga = cKilo * cKilo * cKilo;
 
 const
+  kNoSolidBlockSize = 0;
+  kSolidBlockSize = 64;
+
+const
   DeflateDict: array[0..0] of PtrInt =
   (
    cKilo * 32

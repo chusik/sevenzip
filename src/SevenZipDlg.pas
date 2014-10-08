@@ -218,12 +218,12 @@ begin
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
   if (Format in [afSevenZip]) and (Level <> clStore) then
   begin
-    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, rsSolidBlockNonSolid, 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, rsSolidBlockNonSolid, kNoSolidBlockSize);
     for Index:= Low(SolidBlock) to High(SolidBlock) do
     begin
       ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, FormatFileSize(Int64(SolidBlock[Index]) * cKilo), PtrInt(SolidBlock[Index]));
     end;
-    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, rsSolidBlockSolid, 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, rsSolidBlockSolid, kSolidBlockSize);
   end;
 end;
 
