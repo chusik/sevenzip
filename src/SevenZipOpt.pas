@@ -295,6 +295,7 @@ end;
 procedure SetArchiveOptions(AJclArchive: IInterface);
 var
   ArchiveCLSID: TGUID;
+  SolidBlockSize: Int64;
   Index: TArchiveFormat;
   Solid: IJclArchiveSolid;
   DictionarySize: IJclArchiveDictionarySize;
@@ -319,7 +320,11 @@ begin
           DictionarySize.SetDictionarySize(PluginConfig[Index].Dictionary);
 
         if Supports(AJclArchive, IJclArchiveSolid, Solid) and Assigned(Solid) then
-          Solid.SetSolidBlockSize(Int64(PluginConfig[Index].SolidSize) * cKilo);
+        begin
+          SolidBlockSize:= Int64(PluginConfig[Index].SolidSize);
+          if SolidBlockSize <> kSolidBlockSize then SolidBlockSize:= SolidBlockSize * cKilo;
+          Solid.SetSolidBlockSize(SolidBlockSize);
+        end;
 
         if Supports(AJclArchive, IJclArchiveNumberOfThreads, MultiThreadStrategy) and Assigned(MultiThreadStrategy) then
           MultiThreadStrategy.SetNumberOfThreads(PluginConfig[Index].ThreadCount);
