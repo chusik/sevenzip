@@ -309,14 +309,17 @@ begin
       if Supports(AJclArchive, IJclArchiveCompressionLevel, CompressionLevel) and Assigned(CompressionLevel) then
         CompressionLevel.SetCompressionLevel(PluginConfig[Index].Level);
 
-      if Supports(AJclArchive, IJclArchiveDictionarySize, DictionarySize) and Assigned(DictionarySize) then
-        DictionarySize.SetDictionarySize(PluginConfig[Index].Dictionary);
+      if PluginConfig[Index].Level <> PtrInt(clStore) then
+      begin
+        if Supports(AJclArchive, IJclArchiveDictionarySize, DictionarySize) and Assigned(DictionarySize) then
+          DictionarySize.SetDictionarySize(PluginConfig[Index].Dictionary);
 
-      if Supports(AJclArchive, IJclArchiveSolid, Solid) and Assigned(Solid) then
-        Solid.SetSolidBlockSize(PluginConfig[Index].SolidSize);
+        if Supports(AJclArchive, IJclArchiveSolid, Solid) and Assigned(Solid) then
+          Solid.SetSolidBlockSize(PluginConfig[Index].SolidSize);
 
-      if Supports(AJclArchive, IJclArchiveNumberOfThreads, MultiThreadStrategy) and Assigned(MultiThreadStrategy) then
-        MultiThreadStrategy.SetNumberOfThreads(PluginConfig[Index].ThreadCount);
+        if Supports(AJclArchive, IJclArchiveNumberOfThreads, MultiThreadStrategy) and Assigned(MultiThreadStrategy) then
+          MultiThreadStrategy.SetNumberOfThreads(PluginConfig[Index].ThreadCount);
+      end;
 
       try
         SetArchiveCustom(AJclArchive, Index);

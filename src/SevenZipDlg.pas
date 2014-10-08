@@ -63,10 +63,13 @@ begin
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
   PluginConfig[Format].Level:= GetComboBox(hwndDlg, IDC_COMP_LEVEL);
   PluginConfig[Format].Method:= GetComboBox(hwndDlg, IDC_COMP_METHOD);
-  PluginConfig[Format].Dictionary:= GetComboBox(hwndDlg, IDC_COMP_DICT);
-  PluginConfig[Format].WordSize:= GetComboBox(hwndDlg, IDC_COMP_WORD);
-  PluginConfig[Format].SolidSize:= GetComboBox(hwndDlg, IDC_COMP_SOLID);
-  PluginConfig[Format].ThreadCount:= GetComboBox(hwndDlg, IDC_COMP_THREAD);
+  if PluginConfig[Format].Level <> PtrInt(clStore) then
+  begin
+    PluginConfig[Format].Dictionary:= GetComboBox(hwndDlg, IDC_COMP_DICT);
+    PluginConfig[Format].WordSize:= GetComboBox(hwndDlg, IDC_COMP_WORD);
+    PluginConfig[Format].SolidSize:= GetComboBox(hwndDlg, IDC_COMP_SOLID);
+    PluginConfig[Format].ThreadCount:= GetComboBox(hwndDlg, IDC_COMP_THREAD);
+  end;
   GetDlgItemTextW(hwndDlg, IDC_PARAMETERS, Parameters, MAX_PATH);
   PluginConfig[Format].Parameters:= Parameters;
 
@@ -206,10 +209,14 @@ procedure UpdateSolid(hwndDlg: HWND);
 var
   Index: Integer;
   Format: TArchiveFormat;
+  Level: TCompressionLevel;
 begin
   SendDlgItemMessage(hwndDlg, IDC_COMP_SOLID, CB_RESETCONTENT, 0, 0);
+  // Get Level index
+  Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETCURSEL, 0, 0);
+  Level:= TCompressionLevel(SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETITEMDATA, Index, 0));
   Format:= TArchiveFormat(GetWindowLongPtr(hwndDlg, GWLP_USERDATA));
-  if Format in [afSevenZip] then
+  if (Format in [afSevenZip]) and (Level <> clStore) then
   begin
     ComboBoxAdd(hwndDlg, IDC_COMP_SOLID, rsSolidBlockNonSolid, 0);
     for Index:= Low(SolidBlock) to High(SolidBlock) do
@@ -379,7 +386,6 @@ begin
   Format:= TArchiveFormat(SendDlgItemMessage(hwndDlg, IDC_COMP_FORMAT, CB_GETITEMDATA, Index, 0));
   SetWindowLongPtr(hwndDlg, GWLP_USERDATA, LONG_PTR(Format));
   EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_SOLID), Format = afSevenZip);
-  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_METHOD), not (Format in [afTar, afWim]));
   // 7Zip and Zip
   if Format in [afSevenZip, afZip] then
   begin
@@ -426,7 +432,6 @@ begin
   Index:= SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETCURSEL, 0, 0);
   Level:= TCompressionLevel(SendDlgItemMessage(hwndDlg, IDC_COMP_LEVEL, CB_GETITEMDATA, Index, 0));
 
-  EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_METHOD), Level <> clStore);
   EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_DICT), Level <> clStore);
   EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_WORD), Level <> clStore);
   EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_SOLID), Level <> clStore);
@@ -437,18 +442,17 @@ begin
     SendDlgItemMessage(hwndDlg, IDC_COMP_DICT, CB_RESETCONTENT, 0, 0);
     SendDlgItemMessage(hwndDlg, IDC_COMP_WORD, CB_RESETCONTENT, 0, 0);
     SendDlgItemMessage(hwndDlg, IDC_COMP_SOLID, CB_RESETCONTENT, 0, 0);
+    ComboBoxAdd(hwndDlg, IDC_COMP_METHOD, MethodName[cmCopy], PtrInt(cmCopy));
+    SendDlgItemMessage(hwndDlg, IDC_COMP_METHOD, CB_SETCURSEL, 0, 0);
     UpdateThread(hwndDlg, 1);
   end
   else begin
     FillMethod(hwndDlg);
+    PluginConfig[Format].Method:= DefaultConfig[Format].Method;
     SetComboBox(hwndDlg, IDC_COMP_METHOD, PluginConfig[Format].Method);
     UpdateMethod(hwndDlg);
     UpdateSolid(hwndDlg);
     EnableWindow(GetDlgItem(hwndDlg, IDC_COMP_SOLID), Format = afSevenZip);
-    SetComboBox(hwndDlg, IDC_COMP_DICT, PluginConfig[Format].Dictionary);
-    SetComboBox(hwndDlg, IDC_COMP_WORD, PluginConfig[Format].WordSize);
-    SetComboBox(hwndDlg, IDC_COMP_SOLID, PluginConfig[Format].SolidSize);
-    SetComboBox(hwndDlg, IDC_COMP_THREAD, PluginConfig[Format].ThreadCount);
   end;
 end;
 
