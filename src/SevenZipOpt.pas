@@ -315,7 +315,7 @@ begin
           DictionarySize.SetDictionarySize(PluginConfig[Index].Dictionary);
 
         if Supports(AJclArchive, IJclArchiveSolid, Solid) and Assigned(Solid) then
-          Solid.SetSolidBlockSize(PluginConfig[Index].SolidSize);
+          Solid.SetSolidBlockSize(Int64(PluginConfig[Index].SolidSize) * cKilo);
 
         if Supports(AJclArchive, IJclArchiveNumberOfThreads, MultiThreadStrategy) and Assigned(MultiThreadStrategy) then
           MultiThreadStrategy.SetNumberOfThreads(PluginConfig[Index].ThreadCount);
