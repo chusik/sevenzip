@@ -5,7 +5,7 @@ unit JclReplace;
 interface
 
 uses
-  Classes, SysUtils, fgl;
+  Classes, SysUtils, fgl, Windows;
 
 // JclBase.pas -----------------------------------------------------------------
 type
@@ -34,6 +34,9 @@ type
   end;
 
   function StreamCopy(Source, Target: TStream): Int64;
+
+// JclDateTime.pas -------------------------------------------------------------
+function LocalDateTimeToFileTime(DateTime: TDateTime): TFileTime;
 
 // JclFileUtils.pas ------------------------------------------------------------
 const
@@ -110,11 +113,17 @@ type
 implementation
 
 uses
-  RtlConsts, Windows;
+  RtlConsts;
 
 function StreamCopy(Source, Target: TStream): Int64;
 begin
   Result:= Target.CopyFrom(Source, Source.Size);
+end;
+
+function LocalDateTimeToFileTime(DateTime: TDateTime): TFileTime;
+begin
+  Int64(Result) := Round((Extended(DateTime) + 109205.0) * 864000000000.0);
+  Windows.LocalFileTimeToFileTime(@Result, @Result);
 end;
 
 function PathAddSeparator(const Path: String): String;
