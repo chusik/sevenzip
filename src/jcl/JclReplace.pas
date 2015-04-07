@@ -89,7 +89,8 @@ type
     procedure Error(const Msg: String; Data: Integer);
     procedure Put(Index: Integer; const S: WideString);
     procedure PutObject(Index: Integer; AObject: TObject);
-    function WideStringPointerCompare(Key1, Key2: Pointer): Integer;
+    function CompareWideStringProc(Key1, Key2: Pointer): Integer;
+    function CompareTextWideStringProc(Key1, Key2: Pointer): Integer;
   public
     constructor Create;
     destructor Destroy; override;
@@ -230,8 +231,16 @@ end;
 
 procedure TJclWideStringList.SetCaseSensitive(AValue: Boolean);
 begin
-  if FCaseSensitive=AValue then Exit;
-  FCaseSensitive:=AValue;
+  if FCaseSensitive <> AValue then
+  begin
+    FCaseSensitive:= AValue;
+    if FCaseSensitive then
+      FMap.OnPtrCompare := @CompareWideStringProc
+    else begin
+      FMap.OnPtrCompare := @CompareTextWideStringProc;
+    end;
+    if FMap.Sorted then FMap.Sort;
+  end;
 end;
 
 procedure TJclWideStringList.SetDuplicates(AValue: TDuplicates);
@@ -269,19 +278,20 @@ begin
   FMap.Data[Index] := AObject;
 end;
 
-function TJclWideStringList.WideStringPointerCompare(Key1, Key2: Pointer): Integer;
+function TJclWideStringList.CompareWideStringProc(Key1, Key2: Pointer): Integer;
 begin
-  if FCaseSensitive then
-    Result := WideCompareStr(WideString(Key1^), WideString(Key2^))
-  else begin
-    Result := WideCompareText(WideString(Key1^), WideString(Key2^));
-  end;
+  Result:= WideStringManager.CompareWideStringProc(WideString(Key1^), WideString(Key2^));
+end;
+
+function TJclWideStringList.CompareTextWideStringProc(Key1, Key2: Pointer): Integer;
+begin
+  Result:= WideStringManager.CompareTextWideStringProc(WideString(Key1^), WideString(Key2^));
 end;
 
 constructor TJclWideStringList.Create;
 begin
   FMap := TFPWideStrObjMap.Create;
-  FMap.OnPtrCompare := @WideStringPointerCompare;
+  FMap.OnPtrCompare := @CompareTextWideStringProc;
 end;
 
 destructor TJclWideStringList.Destroy;
