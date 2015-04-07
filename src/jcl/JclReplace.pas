@@ -99,8 +99,7 @@ function GetModuleSymbol(Module: TModuleHandle; SymbolName: String): Pointer;
 // JclStrings.pas --------------------------------------------------------------
 procedure StrTokenToStrings(const Token: String; Separator: AnsiChar; var Strings: TStrings);
 
-// JclWideStrings.pas
-
+// JclWideStrings.pas ----------------------------------------------------------
 type
   TFPWideStrObjMap = specialize TFPGMap<WideString, TObject>;
 
@@ -281,7 +280,7 @@ begin
     FVolume:= GetVolume(0);
     GetVolumeMaxSize(0);
     Result := Assigned(FVolume);
-    if Result then FVolume.Seek(0, soBeginning)
+    if Result then FVolume.Seek(0, soBeginning);
   end;
 end;
 
@@ -423,7 +422,7 @@ end;
 constructor TJclWideStringList.Create;
 begin
   FMap := TFPWideStrObjMap.Create;
-  FMap.OnPtrCompare := @CompareTextWideStringProc;
+  FMap.OnKeyPtrCompare := @CompareTextWideStringProc;
 end;
 
 destructor TJclWideStringList.Destroy;
@@ -446,8 +445,7 @@ end;
 
 function TJclWideStringList.AddObject(const S: WideString; AObject: TObject): Integer;
 begin
-  Result:= Add(S);
-  Objects[Result]:= AObject;
+  Result:= FMap.Add(S, AObject);
 end;
 
 function TJclWideStringList.Find(const S: WideString; var Index: Integer): Boolean;
