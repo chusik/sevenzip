@@ -13,6 +13,12 @@ type
   TDynByteArray = array of Byte;
   TDynCardinalArray = array of Cardinal;
 
+type
+  JclBase = class
+  type
+    PPInt64 = ^PInt64;
+  end;
+
 // JclStreams.pas --------------------------------------------------------------
 type
   TJclStream = TStream;
@@ -25,10 +31,23 @@ type
 
   TJclDynamicSplitStream = class(TJclStream)
   private
+    FVolume: TStream;
     FOnVolume: TJclOnVolume;
     FOnVolumeMaxSize: TJclOnVolumeMaxSize;
+  private
+    function LoadVolume: Boolean;
+    function GetVolume(Index: Integer): TStream;
+    function GetVolumeMaxSize(Index: Integer): Int64;
+  protected
+    function GetSize: Int64; override;
+    procedure SetSize(const NewSize: Int64); override;
   public
     constructor Create(ADummy: Boolean = False);
+
+    function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
+    function Read(var Buffer; Count: LongInt): LongInt; override;
+    function Write(const Buffer; Count: LongInt): LongInt; override;
+
     property OnVolume: TJclOnVolume read FOnVolume write FOnVolume;
     property OnVolumeMaxSize: TJclOnVolumeMaxSize read FOnVolumeMaxSize write FOnVolumeMaxSize;
   end;
@@ -62,7 +81,20 @@ procedure EnumDirectories(const Path: String; OnAddDirectory: TJclOnAddDirectory
 function FindUnusedFileName(const FileName, FileExt: String): String;
 
 // JclSysUtils.pas -------------------------------------------------------------
+type
+  TModuleHandle = HINST;
+
+const
+  INVALID_MODULEHANDLE_VALUE = TModuleHandle(0);
+
+type
+  JclSysUtils = class
+    class function LoadModule(var Module: TModuleHandle; FileName: String): Boolean;
+    class procedure UnloadModule(var Module: TModuleHandle);
+  end;
+
 function GUIDEquals(const GUID1, GUID2: TGUID): Boolean; inline;
+function GetModuleSymbol(Module: TModuleHandle; SymbolName: String): Pointer;
 
 // JclStrings.pas --------------------------------------------------------------
 procedure StrTokenToStrings(const Token: String; Separator: AnsiChar; var Strings: TStrings);
@@ -193,6 +225,26 @@ begin
   Result:= IsEqualGUID(GUID1, GUID2);
 end;
 
+class function JclSysUtils.LoadModule(var Module: TModuleHandle; FileName: String): Boolean;
+begin
+  Module:= LoadLibrary(PAnsiChar(FileName));
+  Result:= Module <> INVALID_MODULEHANDLE_VALUE;
+end;
+
+function GetModuleSymbol(Module: TModuleHandle; SymbolName: String): Pointer;
+begin
+  Result:= GetProcAddress(Module, PAnsiChar(SymbolName));
+end;
+
+class procedure JclSysUtils.UnloadModule(var Module: TModuleHandle);
+begin
+  if Module <> INVALID_MODULEHANDLE_VALUE then
+  begin
+    FreeLibrary(Module);
+    Module:= INVALID_MODULEHANDLE_VALUE;
+  end;
+end;
+
 procedure StrTokenToStrings(const Token: String; Separator: AnsiChar; var Strings: TStrings);
 var
   Start: Integer = 1;
@@ -221,9 +273,80 @@ end;
 
 { TJclDynamicSplitStream }
 
+function TJclDynamicSplitStream.LoadVolume: Boolean;
+begin
+  Result:= Assigned(FVolume);
+  if not Result then
+  begin
+    FVolume:= GetVolume(0);
+    GetVolumeMaxSize(0);
+    Result := Assigned(FVolume);
+    if Result then FVolume.Seek(0, soBeginning)
+  end;
+end;
+
+function TJclDynamicSplitStream.GetVolume(Index: Integer): TStream;
+begin
+  if Assigned(FOnVolume) then
+    Result:= FOnVolume(Index)
+  else begin
+    Result:= nil;
+  end;
+end;
+
+function TJclDynamicSplitStream.GetVolumeMaxSize(Index: Integer): Int64;
+begin
+  if Assigned(FOnVolumeMaxSize) then
+    Result:= FOnVolumeMaxSize(Index)
+  else begin
+    Result:= 0;
+  end;
+end;
+
+function TJclDynamicSplitStream.GetSize: Int64;
+begin
+  if not LoadVolume then
+    Result:= 0
+  else begin
+    Result:= FVolume.Size;
+  end;
+end;
+
+procedure TJclDynamicSplitStream.SetSize(const NewSize: Int64);
+begin
+  if LoadVolume then FVolume.Size:= NewSize;
+end;
+
 constructor TJclDynamicSplitStream.Create(ADummy: Boolean);
 begin
-  Create;
+  inherited Create;
+end;
+
+function TJclDynamicSplitStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
+begin
+  if not LoadVolume then
+    Result:= 0
+  else begin
+    Result:= FVolume.Seek(Offset, Origin);
+  end;
+end;
+
+function TJclDynamicSplitStream.Read(var Buffer; Count: LongInt): LongInt;
+begin
+  if not LoadVolume then
+    Result:= 0
+  else begin
+    Result:= FVolume.Read(Buffer, Count);
+  end;
+end;
+
+function TJclDynamicSplitStream.Write(const Buffer; Count: LongInt): LongInt;
+begin
+  if not LoadVolume then
+    Result:= 0
+  else begin
+    Result:= FVolume.Write(Buffer, Count);
+  end;
 end;
 
 { TJclWideStringList }
