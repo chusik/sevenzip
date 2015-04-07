@@ -235,9 +235,9 @@ begin
   begin
     FCaseSensitive:= AValue;
     if FCaseSensitive then
-      FMap.OnPtrCompare := @CompareWideStringProc
+      FMap.OnKeyPtrCompare := @CompareWideStringProc
     else begin
-      FMap.OnPtrCompare := @CompareTextWideStringProc;
+      FMap.OnKeyPtrCompare := @CompareTextWideStringProc;
     end;
     if FMap.Sorted then FMap.Sort;
   end;
