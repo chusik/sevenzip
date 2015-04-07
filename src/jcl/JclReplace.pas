@@ -107,35 +107,22 @@ type
 
   { TJclWideStringList }
 
-  TJclWideStringList = class(TPersistent)
+  TJclWideStringList = class(TFPWideStrObjMap)
   private
-    FMap: TFPWideStrObjMap;
     FCaseSensitive: Boolean;
   private
-    function GetDuplicates: TDuplicates;
-    function GetSorted: Boolean;
     procedure SetCaseSensitive(AValue: Boolean);
-    procedure SetDuplicates(AValue: TDuplicates);
-    procedure SetSorted(AValue: Boolean);
+    function CompareWideStringProc(Key1, Key2: Pointer): Integer;
+    function CompareTextWideStringProc(Key1, Key2: Pointer): Integer;
   protected
     function Get(Index: Integer): WideString;
     function GetObject(Index: Integer): TObject;
-    procedure Error(const Msg: String; Data: Integer);
     procedure Put(Index: Integer; const S: WideString);
     procedure PutObject(Index: Integer; AObject: TObject);
-    function CompareWideStringProc(Key1, Key2: Pointer): Integer;
-    function CompareTextWideStringProc(Key1, Key2: Pointer): Integer;
   public
     constructor Create;
-    destructor Destroy; override;
-    procedure Delete(Index: Integer);
-    function Add(const S: WideString): Integer;
     function AddObject(const S: WideString; AObject: TObject): Integer;
-    function Find(const S: WideString; var Index: Integer): Boolean;
-    function IndexOf(const S: WideString): Integer;
 
-    property Duplicates: TDuplicates read GetDuplicates write SetDuplicates;
-    property Sorted: Boolean read GetSorted write SetSorted;
     property CaseSensitive: Boolean read FCaseSensitive write SetCaseSensitive;
     property Objects[Index: Integer]: TObject read GetObject write PutObject;
     property Strings[Index: Integer]: WideString read Get write Put; default;
@@ -350,63 +337,38 @@ end;
 
 { TJclWideStringList }
 
-function TJclWideStringList.GetDuplicates: TDuplicates;
-begin
-  Result := FMap.Duplicates;
-end;
-
-function TJclWideStringList.GetSorted: Boolean;
-begin
-  Result := FMap.Sorted;
-end;
-
 procedure TJclWideStringList.SetCaseSensitive(AValue: Boolean);
 begin
   if FCaseSensitive <> AValue then
   begin
     FCaseSensitive:= AValue;
     if FCaseSensitive then
-      FMap.OnKeyPtrCompare := @CompareWideStringProc
+      OnKeyPtrCompare := @CompareWideStringProc
     else begin
-      FMap.OnKeyPtrCompare := @CompareTextWideStringProc;
+      OnKeyPtrCompare := @CompareTextWideStringProc;
     end;
-    if FMap.Sorted then FMap.Sort;
+    if Sorted then Sort;
   end;
-end;
-
-procedure TJclWideStringList.SetDuplicates(AValue: TDuplicates);
-begin
-  FMap.Duplicates := AValue;
-end;
-
-procedure TJclWideStringList.SetSorted(AValue: Boolean);
-begin
-  FMap.Sorted := AValue;
 end;
 
 function TJclWideStringList.Get(Index: Integer): WideString;
 begin
-  Result := FMap.Keys[Index];
+  Result := Keys[Index];
 end;
 
 function TJclWideStringList.GetObject(Index: Integer): TObject;
 begin
-  Result := FMap.Data[Index];
-end;
-
-procedure TJclWideStringList.Error(const Msg: String; Data: Integer);
-begin
-  raise EStringListError.CreateFmt(Msg, [Data]) at get_caller_addr(get_frame), get_caller_frame(get_frame);
+  Result := Data[Index];
 end;
 
 procedure TJclWideStringList.Put(Index: Integer; const S: WideString);
 begin
-  FMap.Keys[Index] := S;
+  Keys[Index] := S;
 end;
 
 procedure TJclWideStringList.PutObject(Index: Integer; AObject: TObject);
 begin
-  FMap.Data[Index] := AObject;
+  Data[Index] := AObject;
 end;
 
 function TJclWideStringList.CompareWideStringProc(Key1, Key2: Pointer): Integer;
@@ -421,41 +383,13 @@ end;
 
 constructor TJclWideStringList.Create;
 begin
-  FMap := TFPWideStrObjMap.Create;
-  FMap.OnKeyPtrCompare := @CompareTextWideStringProc;
-end;
-
-destructor TJclWideStringList.Destroy;
-begin
-  FMap.Free;
-  inherited Destroy;
-end;
-
-procedure TJclWideStringList.Delete(Index: Integer);
-begin
-  if (Index < 0) or (Index >= FMap.Count) then
-    Error(SListIndexError, Index);
-  FMap.Delete(Index);
-end;
-
-function TJclWideStringList.Add(const S: WideString): Integer;
-begin
-  Result := FMap.Add(S);
+  inherited Create;
+  OnKeyPtrCompare := @CompareTextWideStringProc;
 end;
 
 function TJclWideStringList.AddObject(const S: WideString; AObject: TObject): Integer;
 begin
-  Result:= FMap.Add(S, AObject);
-end;
-
-function TJclWideStringList.Find(const S: WideString; var Index: Integer): Boolean;
-begin
-  Result := FMap.Find(S, Index);
-end;
-
-function TJclWideStringList.IndexOf(const S: WideString): Integer;
-begin
-  Result := FMap.IndexOf(S);
+  Result:= inherited Add(S, AObject);
 end;
 
 end.
