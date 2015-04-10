@@ -5,7 +5,7 @@ unit JclReplace;
 interface
 
 uses
-  Classes, SysUtils, fgl, Windows;
+  Classes, SysUtils, fgl, Windows, LazUTF8Classes;
 
 // JclBase.pas -----------------------------------------------------------------
 type
@@ -79,6 +79,7 @@ procedure EnumDirectories(const Path: String; OnAddDirectory: TJclOnAddDirectory
                           DummyBoolean: Boolean; const DummyString: String; DummyPointer: Pointer);
 
 function FindUnusedFileName(const FileName, FileExt: String): String;
+function FileMove(const OldName, NewName: String; Replace: Boolean = False): Boolean;
 
 // JclSysUtils.pas -------------------------------------------------------------
 type
@@ -128,10 +129,23 @@ type
     property Strings[Index: Integer]: WideString read Get write Put; default;
   end;
 
+// Classes.pas -----------------------------------------------------------------
+type
+  TFileStream = TFileStreamUTF8;
+
+// SysUtils.pas -----------------------------------------------------------------
+function FileExists(const FileName: String): Boolean; inline;
+function DeleteFile(const FileName: String): Boolean; inline;
+
+// Windows.pas -----------------------------------------------------------------
+function CreateFile(lpFileName: LPCSTR; dwDesiredAccess: DWORD; dwShareMode: DWORD; lpSecurityAttributes: LPSECURITY_ATTRIBUTES;
+                    dwCreationDisposition: DWORD; dwFlagsAndAttributes: DWORD; hTemplateFile: HANDLE): HANDLE; inline;
+function GetFileAttributesEx(lpFileName: LPCSTR; fInfoLevelId: TGET_FILEEX_INFO_LEVELS; lpFileInformation: Pointer): BOOL; inline;
+
 implementation
 
 uses
-  RtlConsts;
+  RtlConsts, LazFileUtils;
 
 function StreamCopy(Source, Target: TStream): Int64;
 begin
@@ -206,6 +220,14 @@ begin
   until not FileExists(Result);
 end;
 
+function FileMove(const OldName, NewName: String; Replace: Boolean): Boolean;
+const
+  dwFlags: array[Boolean] of DWORD = (0, MOVEFILE_REPLACE_EXISTING);
+begin
+  Result:= MoveFileExW(PWideChar(UTF8Decode(OldName)), PWideChar(UTF8Decode(NewName)),
+                       dwFlags[Replace] or MOVEFILE_COPY_ALLOWED);
+end;
+
 function GUIDEquals(const GUID1, GUID2: TGUID): Boolean;
 begin
   Result:= IsEqualGUID(GUID1, GUID2);
@@ -255,6 +277,28 @@ begin
   finally
     Strings.EndUpdate;
   end;
+end;
+
+function FileExists(const FileName: String): Boolean;
+begin
+  Result:= FileExistsUTF8(FileName);
+end;
+
+function DeleteFile(const FileName: String): Boolean;
+begin
+  Result:= DeleteFileUTF8(FileName);
+end;
+
+function CreateFile(lpFileName: LPCSTR; dwDesiredAccess: DWORD; dwShareMode: DWORD; lpSecurityAttributes: LPSECURITY_ATTRIBUTES;
+                    dwCreationDisposition: DWORD; dwFlagsAndAttributes: DWORD; hTemplateFile: HANDLE): HANDLE;
+begin
+  Result:= CreateFileW(PWideChar(UTF8Decode(lpFileName)), dwDesiredAccess, dwShareMode,
+                       lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+end;
+
+function GetFileAttributesEx(lpFileName: LPCSTR; fInfoLevelId: TGET_FILEEX_INFO_LEVELS; lpFileInformation: Pointer): BOOL;
+begin
+  Result:= GetFileAttributesExW(PWideChar(UTF8Decode(lpFileName)), fInfoLevelId, lpFileInformation);
 end;
 
 { TJclDynamicSplitStream }
