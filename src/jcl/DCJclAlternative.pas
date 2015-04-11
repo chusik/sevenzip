@@ -88,12 +88,12 @@ type
   TJclOnAddDirectory = procedure(const Directory: String) of object;
   TJclOnAddFile = procedure(const Directory: String; const FileInfo: TSearchRec) of object;
 
-function PathAddSeparator(const Path: String): String;
-function PathRemoveSeparator(const Path: String): String;
-function PathGetRelativePath(const Base, Path: String): String;
+function PathAddSeparator(const Path: String): String; inline;
+function PathRemoveSeparator(const Path: String): String; inline;
+function PathGetRelativePath(const Base, Path: String): String; inline;
 
 function PathCanonicalize(const Path: WideString): WideString;
-function IsFileNameMatch(const FileName, Mask: WideString): Boolean;
+function IsFileNameMatch(const FileName, Mask: WideString): Boolean; inline;
 
 procedure BuildFileList(const SourceFile: String; FileAttr: Integer; InnerList: TStrings; Dummy: Boolean);
 procedure EnumFiles(const Path: String; OnAddFile: TJclOnAddFile; ExcludeAttributes: Integer);
@@ -117,7 +117,7 @@ type
   end;
 
 function GUIDEquals(const GUID1, GUID2: TGUID): Boolean; inline;
-function GetModuleSymbol(Module: TModuleHandle; SymbolName: String): Pointer;
+function GetModuleSymbol(Module: TModuleHandle; SymbolName: String): Pointer; inline;
 
 // JclStrings.pas --------------------------------------------------------------
 procedure StrTokenToStrings(const Token: String; Separator: AnsiChar; var Strings: TStrings);
@@ -167,7 +167,7 @@ function GetFileAttributesEx(lpFileName: LPCSTR; fInfoLevelId: TGET_FILEEX_INFO_
 implementation
 
 uses
-  RtlConsts, LazFileUtils;
+  LazFileUtils;
 
 function StreamCopy(Source, Target: TStream): Int64;
 begin
@@ -216,18 +216,18 @@ end;
 procedure BuildFileList(const SourceFile: String; FileAttr: Integer;
                         InnerList: TStrings; Dummy: Boolean);
 begin
-  raise Exception.Create('BuildFileList');
+  raise Exception.Create('Not implemented');
 end;
 
 procedure EnumFiles(const Path: String; OnAddFile: TJclOnAddFile; ExcludeAttributes: Integer);
 begin
-  raise Exception.Create('EnumFiles');
+  raise Exception.Create('Not implemented');
 end;
 
 procedure EnumDirectories(const Path: String; OnAddDirectory: TJclOnAddDirectory;
                           DummyBoolean: Boolean; const DummyString: String; DummyPointer: Pointer);
 begin
-  raise Exception.Create('EnumDirectories');
+  raise Exception.Create('Not implemented');
 end;
 
 function FindUnusedFileName(const FileName, FileExt: String): String;
