@@ -100,6 +100,7 @@ procedure EnumFiles(const Path: String; OnAddFile: TJclOnAddFile; ExcludeAttribu
 procedure EnumDirectories(const Path: String; OnAddDirectory: TJclOnAddDirectory;
                           DummyBoolean: Boolean; const DummyString: String; DummyPointer: Pointer);
 
+function FileDelete(const FileName: String): Boolean; inline;
 function FindUnusedFileName(const FileName, FileExt: String): String;
 function FileMove(const OldName, NewName: String; Replace: Boolean = False): Boolean;
 
@@ -157,7 +158,6 @@ type
 
 // SysUtils.pas -----------------------------------------------------------------
 function FileExists(const FileName: String): Boolean; inline;
-function FileDelete(const FileName: String): Boolean; inline;
 
 // Windows.pas -----------------------------------------------------------------
 function CreateFile(lpFileName: LPCSTR; dwDesiredAccess: DWORD; dwShareMode: DWORD; lpSecurityAttributes: LPSECURITY_ATTRIBUTES;
@@ -228,6 +228,11 @@ procedure EnumDirectories(const Path: String; OnAddDirectory: TJclOnAddDirectory
                           DummyBoolean: Boolean; const DummyString: String; DummyPointer: Pointer);
 begin
   raise Exception.Create('Not implemented');
+end;
+
+function FileDelete(const FileName: String): Boolean;
+begin
+  Result:= DeleteFileW(PWideChar(UTF8Decode(FileName)));
 end;
 
 function FindUnusedFileName(const FileName, FileExt: String): String;
@@ -304,11 +309,6 @@ end;
 function FileExists(const FileName: String): Boolean;
 begin
   Result:= FileExistsUTF8(FileName);
-end;
-
-function FileDelete(const FileName: String): Boolean;
-begin
-  Result:= DeleteFileUTF8(FileName);
 end;
 
 function CreateFile(lpFileName: LPCSTR; dwDesiredAccess: DWORD; dwShareMode: DWORD; lpSecurityAttributes: LPSECURITY_ATTRIBUTES;
