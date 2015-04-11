@@ -64,11 +64,7 @@
             </Options>
           </Linking>
           <Other>
-            <CompilerMessages>
-              <UseMsgFile Value="True"/>
-            </CompilerMessages>
             <CustomOptions Value="-dUNICODE_CTRLS"/>
-            <CompilerPath Value="$(CompPath)"/>
           </Other>
         </CompilerOptions>
       </Item2>
@@ -93,27 +89,22 @@
       <Unit0>
         <Filename Value="SevenZipWcx.dpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="SevenZipWcx"/>
       </Unit0>
       <Unit1>
         <Filename Value="SevenZipFunc.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="SevenZipFunc"/>
       </Unit1>
       <Unit2>
         <Filename Value="SevenZipAdv.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="SevenZipAdv"/>
       </Unit2>
       <Unit3>
         <Filename Value="SevenZipDlg.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="SevenZipDlg"/>
       </Unit3>
       <Unit4>
         <Filename Value="SevenZipLng.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="SevenZipLng"/>
       </Unit4>
     </Units>
   </ProjectOptions>
@@ -124,8 +115,8 @@
       <Filename Value="..\sevenzip.wcx" ApplyConventions="False"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir);jcl\include;jcl\include\jedi"/>
-      <OtherUnitFiles Value="..\..\..\..\sdk;jcl\common;jcl\windows"/>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\..\..\..\sdk;jcl\common;jcl\windows;jcl"/>
       <UnitOutputDirectory Value="..\lib"/>
     </SearchPaths>
     <Parsing>
@@ -149,11 +140,7 @@
       </Options>
     </Linking>
     <Other>
-      <CompilerMessages>
-        <UseMsgFile Value="True"/>
-      </CompilerMessages>
       <CustomOptions Value="-dUNICODE_CTRLS"/>
-      <CompilerPath Value="$(CompPath)"/>
     </Other>
   </CompilerOptions>
   <Debugging>

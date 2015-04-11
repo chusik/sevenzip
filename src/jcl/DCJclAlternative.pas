@@ -135,7 +135,7 @@ type
 
 // SysUtils.pas -----------------------------------------------------------------
 function FileExists(const FileName: String): Boolean; inline;
-function DeleteFile(const FileName: String): Boolean; inline;
+function FileDelete(const FileName: String): Boolean; inline;
 
 // Windows.pas -----------------------------------------------------------------
 function CreateFile(lpFileName: LPCSTR; dwDesiredAccess: DWORD; dwShareMode: DWORD; lpSecurityAttributes: LPSECURITY_ATTRIBUTES;
@@ -284,7 +284,7 @@ begin
   Result:= FileExistsUTF8(FileName);
 end;
 
-function DeleteFile(const FileName: String): Boolean;
+function FileDelete(const FileName: String): Boolean;
 begin
   Result:= DeleteFileUTF8(FileName);
 end;
