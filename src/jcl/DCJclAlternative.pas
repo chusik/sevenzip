@@ -1,4 +1,4 @@
-unit JclReplace;
+unit DCJclAlternative;
 
 {$mode objfpc}{$H+}
 
